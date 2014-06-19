@@ -1,0 +1,86 @@
+<?php
+
+/**
+ * Implementation of hook_install()
+ */
+function ori_partner_install() {
+  $prefix = 'ori_partner';
+  //install required variables
+  variable_set('constant_ori_partner_prefix',$prefix);
+
+  //TODO: move this tp templates!
+  $register_ok_message = <<<EOF
+<style type="text/css">
+<!--
+	@page { margin: 2cm }
+	P { margin-bottom: 0.21cm; direction: ltr; color: #000000; widows: 2; orphans: 2 }
+	A:link { color: #0000ff; so-language: zxx }
+--></style>
+<div class="mess">
+	<p>
+		<span style="font-size:14px;">
+			<b>Регистрационные данные получены, но не подтверждены:</b>
+		</span>
+	</p>
+	<p>
+		Здравствуйте, {firstname}. Мы получили ваши данные, но для завершения процесса вам необходимо подтвердить свою регистрацию, нажав на активационную ссылку в письме, которое мы уже отправили на ваш <span lang="en-US">e-mail</span>: <a href="mailto:{email}"><span lang="en-US"><b>{email}</b></span></a>
+	</p>
+	<p style="margin-bottom: 0.35cm">
+		<b>Как это сделать:</b>
+	</p>
+	<ol>
+		<li>
+			<b>Прямо сейчас</b> войдите на свой <span lang="en-US">e-mail</span>: <a href="mailto:{email}"><span lang="en-US"><b>{email}</b></span></a>
+		</li>
+		<li>Откройте письмо с темой: «Ваши регистрационные данные получены»</li>
+		<li>Нажмите на активационную ссылку в нижней части письма.</li>
+	</ol>
+	<br/>
+	<p>
+		<font color="#00b050"><b>Важно:</b></font> Проверьте папку «Спам», в вашем почтовом ящике, иногда письмо с активационной ссылкой попадает в эту папку.
+	</p>
+</div>
+<p>&nbsp;</p>
+EOF;
+  
+  $settings = array(
+      'baseurl'=>'ori_partner',
+      'message_registrok' => $register_ok_message,
+      'message_confirmok' => 'Уважаемый <b>{firstname}</b> ваш email <b>{email}</b> подтвержден',
+      'message_confirmerror'=>'confirm error message!!!',
+      );
+  
+  
+  $tmp = array();
+  foreach($settings as $name=>$val){
+      $name = is_numeric($name)? $val:$name;
+      $v = ($val? $val:$name);
+      
+      variable_set($prefix.'_'.$name, $v );
+      $tmp[$prefix.'_'.$name] = $prefix.'_'.$name; 
+      drupal_set_message('install variable: '.$prefix.'_'.$name);
+  }
+  
+  variable_set($prefix.'_settings_list',$tmp);
+  
+   // make sure that our hooks run after views'
+  db_query("UPDATE {system} SET weight = 11 WHERE name = 'ori_partner'");
+}
+
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function ori_partner_uninstall() {
+  $prefix   = variable_get('constant_ori_partner_prefix','');
+  $settings = variable_get($prefix.'_settings_list','');
+  if(!empty($settings))
+  {   
+  foreach($settings as $name=>$attr)  {
+    if($name){
+        variable_del($prefix.'_'.$name);
+        drupal_set_message('delete variable: '.$name);
+        }
+     } 
+  }
+}

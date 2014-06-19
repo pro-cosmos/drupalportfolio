@@ -1,0 +1,62 @@
+#ruswebs-support-link a {
+  background:#FF7200;
+  position: fixed;
+  background-color: red;
+  color: white;
+  text-align:center;
+  z-index: 9999;
+  padding: 4px 6px;
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+  -khtml-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  -moz-box-shadow: 2px 2px 20px rgba(0,0,0,.5);
+  -webkit-box-shadow: 2px 2px 20px rgba(0, 0, 0, .5);
+  -khtml-box-shadow: 2px 2px 20px rgba(0,0,0,.5);
+  box-shadow: 2px 2px 20px rgba(0, 0, 0, .5);
+  border: 1px solid #FF7200;
+  display:block;
+  cursor:pointer;
+}
+
+/**  icon styles **/
+#ruswebs-support-link.top a {
+  width:100px;
+  height:22px;
+  right: 50%;
+  top: 0px;
+}
+#ruswebs-support-link.left a {
+  width:22px;
+  height:100px;
+  left: 0px;
+  top: 50%;
+}
+#ruswebs-support-link.right a {
+  width:22px;
+  height:100px;
+  right: 0px;
+  top: 50%;
+}
+
+
+/** feedback form styles  */
+#ruswebs-support-feedback-form .resizable-textarea,
+#ruswebs-support-feedback-form .form-item-message {
+  margin:0px !important;
+}
+#ruswebs-support-feedback-form label {
+  clear:both !important;
+  float:none !important;
+}
+#ruswebs-support-feedback-form .align_center {
+  text-align:center !important;
+}
+#ruswebs-support-feedback-form #form-textarea {
+  padding:0px !important;
+}
+
+/** common */
+fieldset legend {
+  padding:0px !important;
+}

@@ -1,0 +1,108 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function tbg_base_enable() {
+  _tbg_base_init();
+}
+
+/**
+ *
+ */
+function _tbg_base_init() {
+  // Массив модулей для установки
+  // для установки и включения нового модуля просто добавьте его имя в этот массив
+  variable_set('tbg_base_install_modules', array(
+    'tbg_base',
+    'entityreference',
+    'tbg_certification',
+    'strongarm',
+    'profi_loyalty',
+    'fe_block',
+    'view_news_messages',
+    'tbg_online_test',
+    'tbg_profi_navigation',
+    'email',
+    'field_collection',
+    'ds',
+    'fivestar',
+    'votingapi',
+    'geocoder',
+    'geofield',
+    'geophp',
+    'smart_trim',
+    'vud',
+    'link',
+    'tbg_formaters',
+    'tbg_form_logic',
+    'field_collection_table',
+    'uc_product',
+    'tbg_amount_card_fields',
+    'views_data_export',
+    'yamaps',
+    'dealer_comment_fields',
+    'tbg_tracker',
+    'quicktabs',
+    'tbg_contact',
+    'tbg_custom',
+    'privatemsg',
+    'tbg_points',
+    'userpoints',
+    'tbg_actions',
+    'profi_certification_country',
+    'tbg_quest_diller',
+    'rules',
+    'tbg_questions',
+    'tbg_import',
+    'advanced_forum',
+    'tbg_anketa_ta',
+    'wysiwyg',
+    'tbg_import_certification',
+    'imce_wysiwyg',
+    'imce',
+    'ocupload',
+    'pasteformat',
+    'turprodukt',
+    'forum_access',
+    'chain_menu_access',
+    'acl',
+    'menu_token',
+    'node_convert'
+  ));
+
+// Массив feature для обновления - revert
+// для обновления или установки features просто добавьте его имя в этот массив
+  variable_set('tbg_base_install_features', array(
+    'view_news_messages',
+    'jquery_update_stable_config',
+    'tbg_online_test',
+    'profi_loyalty',
+    'tbg_tour_accounting',
+    'node_join_network',
+    'tbg_user_profiles',
+    'node_dealer',
+    'dealer_comment_fields',
+    'tbg_priveleges_cards',
+    'tbg_amount_card_fields',
+    'field_rating_u',
+    'faq_for_profi',
+    'tbg_seminars',
+    'front_main_block',
+    'node_adverttur',
+    'image_presets',
+    'view_supplier_profile',
+    'tbg_expert_community',
+    'node_certification_test',
+    'views_all_dilaer_seti',
+    'suppliernews_content_type',
+    'blogs',
+    'tbg_main_menu_config',
+    'tbg_frontpage_block_config',
+    'views_moderate_expert_request',
+    'turprodukt_features',
+    'tbg_forum',
+    'tbg_poll',
+  ));
+}
+

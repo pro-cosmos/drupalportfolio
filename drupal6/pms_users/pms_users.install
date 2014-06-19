@@ -1,0 +1,598 @@
+<?php
+
+/**
+ * Implementation of hook_install()
+ */
+function pms_users_install() {
+
+  variable_set('pms_users_baseurl', 'admin/oriflame/pms_users');
+
+  variable_set('pms_users_accountstatus', array(
+    '',
+    t('New'),
+    t('Confirmed'),
+    t('Moderation'),
+    t('Disabled'),
+    t('Number assigned'),
+    t('Error'),
+    t('Instructions sent'),
+    t('SMS sent'),
+    t('Call')
+  ));
+
+  //user profile PERMISSIONS
+  variable_set('pms_users_table_filters', array('email', 'firstname', 'lastname', 'middlename', 'country', 'state', 'town', 'status', 'purpose', 'regnumber', 'regdate_from', 'regdate_to', 'mail_status', 'role', 'sex', 'badindex', 'psid', 'groups', 'partner_site', 'has_partnersite', 'sponsor_subscribers'));
+  variable_set('pms_users_partner_allowed_filters', array('email', 'firstname', 'lastname', 'middlename', 'country', 'state', 'town', 'purpose', 'regnumber', 'regdate_from', 'regdate_to', 'sex', 'groups', 'sponsor_subscribers'));
+  variable_set('pms_users_partner_allowed_fields', array('user_name', 'user_password', 'lastname', 'firstname', 'middlename', 'regnumber', 'oriflamepassword', 'tccode', 'tcode', 'tnumber', 'mccode', 'mprefix', 'mnumber', 'email', 'groups', 'email_notifications'));
+  variable_set('pms_users_partnerchild_allowed_fields', array('email', 'firstname', 'lastname', 'middlename', 'birthday', 'index', 'country', 'state', 'town', 'district', 'place', 'communityType', 'street', 'house', 'houseblock', 'flat', 'status', 'purposeType', 'profession', 'pother', 'regnumber', 'regdate_from', 'regdate_to', 'mail_status', 'role', 'sex', 'regnumber', 'oriflamepassword', 'tccode', 'tcode', 'tnumber', 'mccode', 'mprefix', 'mnumber'));
+
+
+  variable_set('pms_users_default_country_id', 1); //'ru'; //1-russia
+  //install tables
+  drupal_install_schema('pms_users');
+
+  // make sure that our hooks run after views'
+  db_query("UPDATE {system} SET weight = 11 WHERE name = 'pms_users'");
+
+  $GLOBALS['pms_users_install'] = true;
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function pms_users_schema() {
+  $scheme = array();
+  // user table
+  $schema['ori_user'] = _pms_users_get_schema_user();
+
+  return $schema;
+}
+
+/**
+ * Returns ori_user schema
+ */
+function _pms_users_get_schema_user() {
+  return array(
+    'description' => 'User',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'User id'
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Secondary key for drupal account'
+      ),
+      'regdate' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Timestamp for user regdate'
+      ),
+      'firstname' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'First name'
+      ),
+      'lastname' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'Last name'
+      ),
+      'middlename' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'Middle name'
+      ),
+      'birthday' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Timestamp for user birthday'
+      ),
+      'passportseries' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'Passport code'
+      ),
+      'passportnumber' => array(
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 40,
+        'description' => 'Passport number'
+      ),
+      'cid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Country id'
+      ),
+      'pindex' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'Index'
+      ),
+      'cmid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Community type'
+      ),
+      'stid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'State id'
+      ),
+      'tid' => array(
+        'type' => 'int',
+        'description' => 'Town id',
+        'not null' => TRUE,
+      ),
+      'tidvalue' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'City user value'
+      ),
+      'district' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'District'
+      ),
+      'loctitle' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'Location title'
+      ),
+      'street' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'Street'
+      ),
+      'house' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'House number'
+      ),
+      'houseblock' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'House block'
+      ),
+      'flat' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'Flat',
+        'not null' => TRUE
+      ),
+      'tccode' => array(
+        'type' => 'varchar',
+        'length' => 10,
+        'description' => 'Country code'
+      ),
+      'tcode' => array(
+        'type' => 'varchar',
+        'length' => 10,
+        'description' => 'Town code',
+        'not null' => TRUE
+      ),
+      'tnumber' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'description' => 'Home phone number'
+      ),
+      'mccode' => array(
+        'type' => 'varchar',
+        'length' => 10,
+        'description' => 'Country code'
+      ),
+      'mprefix' => array(
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => TRUE,
+        'description' => 'Mobile operator prefix'
+      ),
+      'mnumber' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'description' => 'Mobile phone number'
+      ),
+      'email' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'Email'
+      ),
+      'purid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Purpose id'
+      ),
+      'pother' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'Other purpose'
+      ),
+      'profession' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => TRUE,
+        'description' => 'Profession'
+      ),
+      'status' => array(
+        'type' => 'int',
+        'description' => 'Status id'
+      ),
+      'regnumber' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'Registration number'
+      ),
+      'oriflamepassword' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'Password for oriflame'
+      ),
+      'psfrendemail' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'PSFrendEmail',
+        'not null' => TRUE
+      ),
+      'regsource' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'Registration source(site, psid)'
+      ),
+      'regsourceid' => array(
+        'type' => 'int',
+        'description' => 'Regsource id'
+      ),
+      'psid' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'default' => 0,
+        'description' => 'Sponsor id'
+      ),
+      'pstown' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'Sponsor town',
+        'not null' => TRUE
+      ),
+      'ip' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'IP'
+      ),
+      'sex' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+        'description' => 'Sex of user'
+      ),
+      'role' => array(
+        'type' => 'int',
+        'default' => 0,
+        'description' => 'Active/Disable city'
+      ),
+      'sponsor' => array(
+        'type' => 'varchar',
+        'length' => 100,
+        'description' => 'Sponsor user id',
+        'not null' => TRUE
+      ),
+      'drupalpassword' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'description' => 'Password of Drupal account'
+      ),
+      'badindex' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+        'description' => 'Undefined postindex'
+      ),
+      'autoreg' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+        'description' => 'Flag of last autoreg registration.'
+      ),
+      'instruction_send' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('Last instruction send timestamp.')
+      ),
+      'errortext' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'description' => 'Error text message'
+      ),
+      'email_confirmed' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+        'description' => 'Flag of email confirmation.'
+    ),
+     'extra' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'description' => 'Extra json encoded information'
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'ixu_uid' => array('uid'),
+      'ixu_id2uid' => array('id', 'uid'),
+      'ixu_email' => array('email')
+    ),
+    'indexes' => array(
+      'ix_uid' => array('uid'),
+      'ix_pindex' => array('pindex'),
+      'ix_cid' => array('cid'),
+      'ix_stid' => array('stid'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function pms_users_uninstall() {
+  drupal_uninstall_schema('pms_users');
+
+  //delete temp users
+  $q = db_query("select uid from {users} where `picture` = 'http://tmpuser.gif' ");
+  while ($u = db_fetch_array($q)) {
+    if ($r['uid'] > 0)
+      user_delete($r['uid']);
+  }
+
+  //delete partnersite test record
+  // db_query("delete from `{ori_partner_site}` where uid = 4 limit 1");
+}
+
+/**
+ * Update 6001: add `instruction_send` field to column
+ */
+function pms_users_update_6001() {
+  $ret = array();
+
+  if (!db_column_exists('ori_user', 'instruction_send')) {
+    $spec = array(
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+      'description' => t('Last instruction send timestamp.'),
+    );
+
+    db_add_field($ret, 'ori_user', 'instruction_send', $spec);
+  }
+
+  return $ret;
+}
+
+/**
+ * Update 6002: add `errortext` field to column
+ */
+function pms_users_update_6002() {
+  $ret = array();
+
+  if (!db_column_exists('ori_user', 'errortext')) {
+    $spec = array(
+      'type' => 'text',
+      'size' => 'big',
+      'not null' => TRUE,
+      'description' => 'Error text message'
+    );
+
+    db_add_field($ret, 'ori_user', 'errortext', $spec);
+  }
+
+  return $ret;
+}
+
+/**
+ * Update 6003: set proper value for pms_users_partner_allowed_fields
+ */
+function pms_users_update_6003() {
+  $ret = array();
+
+  $fields = array(
+    'user_name', 'user_password', 'lastname', 'firstname', 'middlename',
+    'regnumber', 'oriflamepassword',
+    'tccode', 'tcode', 'tnumber', 'mccode', 'mprefix', 'mnumber', 'email',
+    'groups', 'email_notifications');
+
+  variable_set('pms_users_partner_allowed_fields', $fields);
+
+  $ret[] = array('success' => TRUE, 'query' => check_plain('updated pms_users_partner_allowed_fields variable'));
+
+  return $ret;
+}
+
+/**
+ * Update 6004: add `email_confirmed` field to column
+ */
+function pms_users_update_6004() {
+  $ret = array();
+
+  if (!db_column_exists('ori_user', 'email_confirmed')) {
+    $spec = array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+      'description' => t('Email confirmed flag.'),
+    );
+
+    db_add_field($ret, 'ori_user', 'email_confirmed', $spec);
+  }
+
+  return $ret;
+}
+
+function pms_users_update_6005() {
+  $ret = array();
+  module_load_include('inc', 'pms_users', 'pms_users');
+  //почему то он не запускает эту функцию здесь
+  _pms_users_after_install_create_fake_temporary_sponsor();
+  return $ret;
+}
+
+function pms_users_update_6006() {
+  $ret = array();
+  variable_set('pms_users_table_filters', array('email', 'firstname', 'lastname', 'middlename', 'country', 'state', 'town', 'status', 'purpose', 'regnumber', 'regdate_from', 'regdate_to', 'mail_status', 'role', 'sex', 'badindex', 'psid', 'groups', 'partner_site', 'has_partnersite', 'sponsor_subscribers', 'view_training'));
+
+  return $ret;
+}
+
+function pms_users_update_6007() {
+  $ret = array();
+  variable_set('constant_purposes', array(
+    'Покупать косметику со скидкой',
+    'Зарабатывать на продаже косметики',
+    'Я хочу стать директором Oriflame',
+    'Посмотрел инструкцию',
+    'Другое'
+  ));
+  return $ret;
+}
+
+function pms_users_update_6008() {
+  $ret = array();
+
+  variable_set('constant_purposes', array(
+    'Покупать косметику со скидкой',
+    'Зарабатывать на продаже косметики',
+    'Я хочу стать директором Oriflame',
+    'Другое'
+  ));
+  variable_set('pms_users_table_filters', array('email', 'firstname', 'lastname', 'middlename', 'country', 'state', 'town', 'status', 'purpose', 'show_view', 'regnumber', 'regdate_from', 'regdate_to', 'mail_status', 'role', 'sex', 'badindex', 'psid', 'groups', 'partner_site', 'has_partnersite', 'sponsor_subscribers', 'view_training'));
+  variable_set('pms_users_partner_allowed_filters', array('email', 'firstname', 'lastname', 'middlename', 'country', 'state', 'town', 'purpose', 'show_view', 'regnumber', 'regdate_from', 'regdate_to', 'sex', 'groups', 'sponsor_subscribers'));
+  return $ret;
+}
+
+function pms_users_update_6009() {
+  $ret = array();
+
+  variable_set('pms_users_table_filters', array('email', 'firstname', 'lastname', 'middlename', 'country', 'state', 'town', 'status', 'purpose', 'show_view', 'regnumber', 'regdate_from', 'regdate_to', 'mail_status', 'role', 'sex', 'badindex', 'psid', 'groups', 'partner_site', 'has_partnersite', 'sponsor_subscribers'));
+  variable_set('pms_users_partner_allowed_filters', array('email', 'firstname', 'lastname', 'middlename', 'country', 'state', 'town', 'purpose', 'show_view', 'regnumber', 'regdate_from', 'regdate_to', 'sex', 'groups', 'sponsor_subscribers'));
+
+  return $ret;
+}
+
+/**
+ * Update `6010`: обновляет переменную pms_users_accountstatus
+ */
+function pms_users_update_6010() {
+  $ret = array();
+  variable_set('pms_users_accountstatus', array(
+    '',
+    t('New'),
+    t('Confirmed'),
+    t('Moderation'),
+    t('Disabled'),
+    t('Number assigned'),
+    t('Error'),
+    t('Instructions sent'),
+    t('SMS sent')
+  ));
+
+  $ret[] = array('success' => TRUE, 'query' => check_plain('обновили переменную pms_users_accountstatus, которая управляет статусами партнеров'));
+
+
+  return $ret;
+}
+
+/**
+ * add `extra` field to column
+ */
+function pms_users_update_6011() {
+  $ret = array();
+
+  if (!db_column_exists('ori_user', 'extra')) {
+    $spec = array(
+      'type' => 'text',
+      'size' => 'big',
+      'not null' => TRUE,
+      'description' => 'Extra json encoded information'
+    );
+
+    db_add_field($ret, 'ori_user', 'extra', $spec);
+  }
+
+  $ret[] = array('success' => TRUE, 'query' => check_plain('add `extra` field to column'));
+
+  return $ret;
+}
+
+
+/**
+ * add field indexes
+ */
+function pms_users_update_6012() {
+  $ret = array();
+
+  $fields = array('regdate', 'firstname', 'lastname', 'middlename', 'birthday', 'passportseries', 'passportnumber', 'cmid', 'tid', 'tidvalue', 'district', 'loctitle', 'house', 'houseblock', 'flat', 'tccode', 'tcode', 'tnumber', 'mccode', 'mprefix', 'mnumber', 'purid', 'pother', 'status', 'regnumber', 'regsource', 'regsourceid', 'psid', 'pstown', 'ip', 'sex', 'role', 'sponsor','badindex', 'autoreg', 'instruction_send', 'email_confirmed');
+  foreach($fields as $f){
+     db_add_index($ret, 'ori_user', 'ix_'.$f, array($f));
+  }
+
+  $ret[] = array('success' => TRUE, 'query' => check_plain('add field indexes'));
+
+  return $ret;
+}
+
+/**
+ * Update `6013`: обновляет переменную pms_users_accountstatus
+ */
+function pms_users_update_6013() {
+  $ret = array();
+  $v = variable_get('pms_users_accountstatus', array());
+  $v[9] = t('Call');
+  variable_set('pms_users_accountstatus', $v);
+  $ret[] = array('success' => TRUE, 'query' => check_plain('добавили статус '.t('Call')));
+
+  return $ret;
+}
+
+/**
+ * Update `6014`: обновляет переменную pms_users_accountstatus
+ */
+function pms_users_update_6014() {
+  $ret = array();
+  $v = variable_get('pms_users_table_filters', array());
+  $v[24] = 'subscription_usermail_mid';
+  $v[25] = 'subscription_usermail_status';
+  variable_set('pms_users_table_filters', $v);
+  $ret[] = array('success' => TRUE, 'query' => check_plain('добавили фильтры subscription_usermail_status, subscription_usermail_mid'));
+
+  return $ret;
+}
+
+/**
+ * Update `6014`: обновляет переменную pms_users_accountstatus
+ */
+function pms_users_update_6015() {
+  $ret = array();
+  $v = variable_get('pms_users_table_filters', array());
+  $v[26] = 'partner_site_editable';
+  variable_set('pms_users_table_filters', $v);
+  $ret[] = array('success' => TRUE, 'query' => check_plain('добавили фильтр partner_site_editable'));
+
+  return $ret;
+}

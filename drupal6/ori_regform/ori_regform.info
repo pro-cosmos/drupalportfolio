@@ -1,0 +1,7 @@
+name = Oriflame registration form
+package = "Oriflame"
+description = Oriflame registration form
+dependencies[] = ori_client
+version = "6.x-1.0-dev"
+project = "ori_regform"
+core = 6.x

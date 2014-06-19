@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<states>
+	<state>
+		<title>Московская область</title>
+		<towns>
+			<town>Москва</town>
+			<town>Зеленоград</town>
+		</towns>
+	</state>
+	<state>
+		<title>Тверская область</title>
+		<towns>
+			<town>Тверь</town>
+			<town>Торжок</town>
+		</towns>
+	</state>
+</states>

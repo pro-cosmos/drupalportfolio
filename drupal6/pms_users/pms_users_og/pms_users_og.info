@@ -1,0 +1,7 @@
+name = Oriflame PMS users OG
+description = Enable create custom groups and add/remove users to him like OG module.
+core = 6.x
+project = "pms_users_og"
+version = "6.x-1.0-dev"
+package = "Oriflame"
+dependencies[] = pms_users

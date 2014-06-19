@@ -1,0 +1,6 @@
+name = Mail and Subscription
+description = Manages mails and subscriptions
+core = 6.x
+project = "subscription"
+version = "6.x-1.0-dev"
+package = "Oriflame"

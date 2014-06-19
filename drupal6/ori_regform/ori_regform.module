@@ -1,0 +1,298 @@
+<?php
+
+define('ORI_REGFORM_DOMAIN_NAME', 'ori-regform.ru');
+
+function ori_regform_init(){
+global $conf;
+if (isset($conf['ori_base_host_regform']) && $conf['ori_base_host_regform'] != ORI_REGFORM_DOMAIN_NAME){
+   $s = variable_get('constant_ori_client_xmlrpcserver','');
+   if ($s)
+     variable_set('constant_ori_client_xmlrpcserver',str_replace('https://','http://',$s));
+}
+
+
+// save site referer
+if (false != $referer = ori_regform_get_referer())
+   {
+   $_SESSION['OriRegform']['site_referer'] = $referer;
+   //передаем найденный по рефсылке сайт парнера чтобы рега была как с парнерского сайта
+   //if (isset($_SESSION['OriRegform']['referal_site_referer']))
+   //    $_SESSION['OriRegform']['site_referer'] = $_SESSION['OriRegform']['referal_site_referer'];
+   }
+   //let module alter referer
+  drupal_alter('regform_site_referer', $_SESSION['OriRegform']['site_referer']);
+}
+
+
+
+
+function ori_regform_get_referer(){
+  // watchdog('get_referer',json_encode($_SERVER['REQUEST_URI']));
+  $r = parse_url($_SERVER['HTTP_REFERER']);
+  if(!empty($r['host']) && $r['host'] != $_SERVER['HTTP_HOST'])
+     return $r['host'];
+
+return false;
+}
+
+
+function ori_regform_menu() {
+    $items = array();
+
+ //admin menu
+ $items['admin/settings/ori'] = array(
+    'title' => 'Oriflame regform',
+    'description' => 'Central catalogue of all partner learning materials.',
+    'position' => 'right',
+    'weight' => -4,
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer ori_regform'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+
+    $items['admin/settings/ori/ori_regform/settings'] = array(
+        'title' => t('Oriflame registration form settings'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('ori_regform_settings'),
+        'access arguments' => array('administer ori_regform'),
+       // 'type' => 'MENU_DEFAULT_LOCAL_TASK',
+        'file' => 'ori_regform.admin.inc'
+    );
+
+    $items['admin/settings/ori/ori_regform/tooltip_links'] = array(
+        'title' => t('Oriflame tooltip links'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('ori_regform_tooltiplinks'),
+        'access arguments' => array('administer ori_regform tooltips'),
+        //'type' => 'MENU_LOCAL_TASK',
+        'file' => 'ori_regform.admin.inc'
+    );
+
+
+
+
+    //public menu
+    $urlbase = variable_get('ori_regform_baseurl','');
+
+    $items[$urlbase] = array(
+        'title' => t('Oriflame registration form'),
+        'page callback' => 'ori_regform_page',
+        'access callback' => TRUE,
+        'file' => 'ori_regform.regform.inc'
+    );
+
+
+    // autocomplete
+        $items[$urlbase . '/ajax/%'] = array(
+        'page callback' => 'ori_regform_ajax_callback',
+        'page arguments' => array(2),
+        'type' => MENU_CALLBACK,
+        'access callback' => TRUE,
+        'file' => 'ori_regform.regform.inc'
+    );
+
+     // referal link
+        $items['ref/%'] = array(
+        'page callback' => 'ori_regform_referal_callback',
+        'page arguments' => array(1),
+        'type' => MENU_CALLBACK,
+        'access callback' => TRUE
+    );
+
+    return $items;
+}
+
+function ori_regform_perm() {
+    return array(
+        'administer ori_regform',
+        'ori_regform add settings',
+        'administer ori_regform tooltips',
+        'ori_regform add tooltips',
+        );
+}
+
+function ori_regform_theme($existing) {
+    $path = drupal_get_path('module', 'ori_regform') . '/templates';
+
+    return array(
+        'ori_regform_page' =>
+        array(
+            'arguments' => array('vars' => NULL),
+            'template' => 'ori-regform--page',
+            'path' => $path,
+        ),
+        // Theme for radio group.
+        'radios_sex' => array(
+            'arguments' => array('element' => NULL),
+            'file' => 'ori_regform.theme.inc'
+        ),
+        // Theme for single radio.
+        'radio_sex' => array(
+            'arguments' => array('element' => NULL),
+            'file' => 'ori_regform.theme.inc'
+        ),
+        'ori_regform_tooltip_group' => array(
+            'arguments' => array('group' => NULL),
+            'file' => 'ori_regform.theme.inc'
+        ),
+        'ori_tooltiplink' => array(
+            'arguments' => array('element' => NULL),
+            'file' => 'ori_regform.theme.inc'
+        )
+    );
+}
+
+
+function ori_regform_page(){
+
+//add common variables
+$prefix = variable_get('constant_ori_regform_prefix','');
+$settings = variable_get($prefix.'_settings_list','');
+  foreach($settings as $name=>$attr){
+    $vars[str_replace($prefix.'_','',$name)] = variable_get($name,'');
+  }
+
+  //add custom
+$vars['important_content'] = theme('ori_regform_tooltip_group','important');
+$vars['agreements'] = variable_get('ori_regform_agreement','');
+$vars['step3'].= '<br />'.theme('ori_tooltiplink', 6);
+
+
+
+//add form
+_ori_regform_regform_add_js();
+$vars['content']  = drupal_get_form('ori_regform_regform');
+
+
+ return theme('ori_regform_page',$vars);
+}
+
+
+function _ori_regform_regform_add_js(){
+
+    $GEOIP_COUNTRY ='ru';
+    $currCountry = isset($_POST['country'])? check_plain($_POST['country']): $GEOIP_COUNTRY;
+    $path = drupal_get_path('module', 'ori_regform');
+    //autocomplete
+    drupal_add_js($path . '/js/autocomplete/jquery.ui.core.min.js');
+    drupal_add_js($path . '/js/autocomplete/jquery.ui.widget.min.js');
+    drupal_add_js($path . '/js/autocomplete/jquery.ui.position.min.js');
+    drupal_add_js($path . '/js/autocomplete/jquery.ui.autocomplete.min.js');
+    drupal_add_css($path. '/js/autocomplete/themes/base/jquery.ui.base.css');
+    drupal_add_css($path. '/js/autocomplete/themes/base/jquery.ui.theme.css');
+
+    //datapicker
+    drupal_add_js($path . '/js/datapicker/languages/jquery.ui.datepicker-'. $currCountry .'.js');
+    drupal_add_js($path . '/js/datapicker/jquery.ui.datepicker.js');
+    drupal_add_css($path. '/js/datapicker/themes/base/jquery.ui.base.css');
+    drupal_add_css($path. '/js/datapicker/themes/base/jquery.ui.datepicker.css');
+
+
+
+    //jquery form validate
+    drupal_add_js($path . '/js/formvalidate/js/languages/jquery.validationEngine-'. $currCountry .'.js');
+    drupal_add_js($path . '/js/formvalidate/js/jquery.validationEngine.js');
+    drupal_add_css($path. '/js/formvalidate/validationEngine.jquery.css');
+    drupal_add_css($path. '/js/formvalidate/template.css');
+
+
+    drupal_add_js($path . '/js/cluetip/jquery.cluetip.min.js');
+    drupal_add_css($path . '/js/cluetip/jquery.cluetip.css');
+}
+
+
+
+
+function ori_regform_success_page(){
+    $orisess = $_SESSION['OriRegform'];
+
+    $out = 'Уважаемый '.$orisess['firstname'].' Спасибо за регистрацию!
+            на ваш email '. $orisess['email'] .' выслано письмо с ссылкой для подтверждения';
+
+  return $out;
+}
+
+
+
+
+
+/**
+ *
+ * @param type $variables
+ */
+function ori_regform_preprocess_page(&$variables) {
+//dpm($variables);
+  if ($_SERVER['HTTP_HOST'] != ORI_REGFORM_DOMAIN_NAME) {
+    $partner = OriClient::loadUserSite($_SERVER['HTTP_HOST']);
+    //var_dump($partner);
+    if ($partner){
+    $srchost = parse_url(variable_get('constant_ori_client_xmlrpcserver',''));
+    $srchost = 'http://'.$srchost['host'].'/partner/';
+
+    $body_styles = $footer_styles = $header_styles = array();
+    $imp = ' !important;';
+    $bgcolor = $partner['external_site_bg_color']? "background:#".$partner['external_site_bg_color']:"background:#EEE !important;";
+
+    $bgimage = $partner['external_site_bg_image_fid']? "background-attachment: fixed;background: "
+            .($partner['external_site_bg_color']?'#'.$partner['external_site_bg_color']:'')
+            ." url('".$srchost.$partner['external_site_bg_image_fid']."') 50% 0 no-repeat":'';
+
+    $logo = $partner['external_site_logo_fid']? "background: transparent"
+            ." url('".$srchost.$partner['external_site_logo_fid']."') 0 0 no-repeat":'';
+
+
+    if ($bgcolor) {
+      $body_styles   = $bgcolor.$imp;
+      }
+    if ($bgimage) {
+      $body_styles   = $bgimage.$imp;
+      }
+
+    if ($logo) {
+      $logo_styles = $logo.$imp;
+      $variables['site_name'] ='';
+      $variables['logo'] = '';
+      }
+
+     $variables['body_styles'] = 'id="custom-page"';
+
+     $variables['styles'].=
+       '<style>
+         #custom-page .page-wrap {overflow:hidden;width:990px !important;margin:50px auto !important; background:transparent url("/sites/all/themes/oriflame/oriflame_regform/img/header-bg.png") 0 0 repeat-x !important;}'
+       .'#custom-page .page-wrap section {padding-bottom:20px;background:#fff url("/sites/all/themes/oriflame/oriflame_regform/img/footer-bg.png") repeat-x left bottom !important;}'
+       .'#custom-page {'. $body_styles.'}'
+       .'#custom-page header {height:120px;}'
+       .'#custom-page footer {height:0px !important;background:transparent !important;}'
+       .'#custom-page .footer-push {height:10px !important;}'
+       .'#custom-page header .wrapper {padding:0px !important; height:90px;'.$logo_styles.'}'
+       .'#custom-page section .wrapper {padding:0px 20px!important;}'
+       .'</style>';
+    }
+  }
+
+}
+
+
+function ori_regform_referal_callback($referal_number){
+  //get partner site name by regnumber
+  $account = OriClient::regnumberUser(check_plain($referal_number));
+  if ((int)$account['uid']>0){
+    //$_SESSION['OriRegform']['referal_site_referer'] = $account->domain_name;
+    $_SESSION['OriRegform']['referal_partner_uid'] = $account['uid'];
+    drupal_goto('','ref='.$account['uid']);
+  }
+  drupal_goto('');
+}
+
+/**
+ *
+ * @param type $res
+ */
+function ori_regform_regform_submit_after($res = array()) {
+    if ($res && !isset($res['error_message'])){
+      //очищаем куки о источнике перехода после успешной регистрации
+      unset($_SESSION['OriRegform']);
+    }
+}

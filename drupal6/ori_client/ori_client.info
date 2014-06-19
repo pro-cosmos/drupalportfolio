@@ -1,0 +1,5 @@
+name = Oriflame client API
+package = "Oriflame"
+description = Oriflame client API
+version = 6.0
+core = 6.x

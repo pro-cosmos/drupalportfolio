@@ -1,0 +1,62 @@
+<?php
+
+/**
+ *
+ */
+function _tbg_base_update_modules($install_modules) {
+  $enable_modules = array();
+
+  foreach ($install_modules as $module_name) {
+    if (!module_exists($module_name))
+      $enable_modules[] = $module_name;
+  }
+
+  if (!empty($enable_modules)) {
+    module_enable($enable_modules, FALSE);
+  }
+
+  watchdog('tbg_base', 'Enabled modules: @list ', array('@list' => empty($enable_modules) ? 'none' : implode(', ', $enable_modules)), WATCHDOG_NOTICE);
+}
+
+/**
+ *
+ */
+function _tbg_base_revert_features() {
+  module_load_include('inc', 'features', 'features.export');
+  features_include();
+
+  $install_features = variable_get('tbg_base_install_features', array());
+  $updated_features = array();
+
+  foreach ($install_features as $feature_name) {
+    // Only revert components that are detected to be Overridden/Needs review/rebuildable.
+    $states = features_get_component_states(array($feature_name), FALSE);
+    foreach ($states[$feature_name] as $component => $state) {
+      if (in_array($state, array(FEATURES_OVERRIDDEN, FEATURES_NEEDS_REVIEW, FEATURES_REBUILDABLE)) && features_hook($component, 'features_revert')) {
+        //revert one feature
+        $feature = features_get_features($feature_name);
+        $components = array_keys($feature->info['features']);
+        features_revert(array($feature_name => $components));
+
+        $updated_features[] = $feature_name;
+      }
+    }
+  }
+
+  watchdog('tbg_base', 'Updated features: @list ', array('@list' => empty($updated_features) ? 'none' : implode(', ', $updated_features)), WATCHDOG_NOTICE);
+}
+
+
+/**
+ * Install modules and update features
+ */
+function _tbg_base_update_all() {
+  // Enable ALL modules
+  _tbg_base_update_modules(variable_get('tbg_base_install_modules', array()));
+   // Enable ALL features modules
+  _tbg_base_update_modules(variable_get('tbg_base_install_features', array()));
+  // Revert ALL features
+  _tbg_base_revert_features();
+  // Flush all caches.
+  drupal_flush_all_caches();
+}

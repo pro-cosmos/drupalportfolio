@@ -1,0 +1,5 @@
+name = Ruswebs support
+description = Модуль техподдержки Ruswebs
+package = Ruswebs
+core = 7.x
+version = "7.x-1.0"

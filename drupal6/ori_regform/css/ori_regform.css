@@ -1,0 +1,99 @@
+td table{
+    margin:  0;
+}
+table td
+{
+    padding: 2px;
+}
+td.row-label
+{
+    font-weight: bold;
+    vertical-align:top;
+}
+td.td-value
+{
+    width: 500px;
+}
+td div.form-item{
+    margin: 0 0 0 0;
+}
+table tbody {
+    border: none;
+}
+fieldset legend
+{
+    text-decoration: underline;
+}
+div.form-item label{
+    display: none;
+}
+input.error, textarea.error, select.error{
+    border:1px solid #C52020;
+    color: #494949;
+}
+.form-item input.error, .form-item textarea.error, .form-item select.error {
+    border: 1px solid red;
+}
+#edit-mprefix-wrapper, #edit-tccode-wrapper, #edit-tcode-wrapper, #edit-mccode-wrapper{
+    display:inline;
+}
+
+
+
+
+
+.ui-autocomplete {
+    max-height: 100px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+    /* add padding to account for vertical scrollbar */
+    padding-right: 20px;
+}
+/* IE 6 doesn't support max-height
+ * we use height instead, but this forces the menu to always be this tall
+*/
+* html .ui-autocomplete {
+    height: 100px;
+}
+
+ul.ui-autocomplete li {background:none !important;}
+
+
+table.user-table tr.hidden {display:none !important;}
+table.user-table tr.show {display:block}
+
+table.user-table select {width:100px}
+.table_inner {background:#ccc}
+
+.txtdisable {
+	color:#aaa !important;
+}
+
+#ori-regform-regform #tr_index .load-local span,
+#ori-regform-regform #tr_email .load-local span
+{
+    background: none repeat scroll 0 0 #83AF00;
+    border: medium none !important;
+    border-radius: 3px 3px 3px 3px;
+    color: #FFFC13;
+    font-size: 10px;
+    line-height: 1px;
+    margin-left: 4px;
+    padding: 0 3px 1px 2px;
+}
+
+/* tip icon */
+.tip-field {
+    background: url(../img/question-icon.png) no-repeat top left !important;
+    display: inline-block;
+    height: 13px;
+    margin-left: 5px;
+    width: 13px;
+}
+
+#ui-datepicker-div {z-index:992 !important}
+
+textarea#edit-pother {
+  display:inline !important;
+}

@@ -1,0 +1,182 @@
+<?php
+
+/**
+ * Implementation of hook_menu().
+ */
+function cbt_webform_menu() {
+
+  $items['cbt_webform/clone/%node'] = array(
+      'page callback' => 'cbt_webform_clone',
+      'page arguments' => array(2),
+      'access' => 'user_access',
+      'access arguments' => array('clone webforms'),
+      'type' => MENU_CALLBACK,
+      'weight' => 100
+  );
+
+  $items['node/%webform_menu/webform/components/%webform_menu_component/stats'] = array(
+      'load arguments' => array(1, 4),
+      'title' => t('Webform component statistics'),
+      'page callback' => 'cbt_webform_components_stats_page',
+      'page arguments' => array(1, 4),
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function cbt_webform_perm() {
+  return array('clone webforms');
+}
+
+/**
+ * Implementation of hook_link
+ */
+function cbt_webform_link($type, $node, $teaser=FALSE) {
+  global $user;
+
+  $buttons = array();
+  // clone question link
+  if ($type == 'node' && $node->type == 'webform') {
+    if (!$teaser && user_access('clone webforms')) {
+      $buttons[] = array(
+          'href' => 'cbt_webform/clone/' . $node->nid,
+          'title' => t('Clone!'),
+      );
+    }
+  }
+
+  return $buttons;
+}
+
+/**
+ * Provide cloning option for quiz. All data will be copies, status reset to in work
+ */
+function cbt_webform_clone($node = NULL) {
+  global $user;
+
+
+  if ($node && $node->type == 'webform') {
+    if (node_access('view', $node) && node_access('create', $node->type)) {
+      $new_node = clone $node;
+      $new_node->nid = NULL;
+      $new_node->vid = NULL;
+      $new_node->name = $user->name;
+      $new_node->uid = $user->uid;
+      $new_node->title = '[cloned] ' . $node->title;
+      $new_node->created = NULL;
+      $new_node->changed = NULL;
+      $new_node->menu = NULL;
+      $new_node->path = NULL;
+      $new_node->type = $node->type;
+      $new_node->old_nid = $node->nid;
+      unset($new_node->field_group_access); // remove access group settings
+
+      module_load_include('inc', 'node', 'node.pages');
+      //return node_page_edit($new_node);
+      return drupal_get_form($new_node->type . '_node_form', $new_node);
+    } else {
+      drupal_access_denied();
+    }
+  }
+  drupal_not_found();
+}
+
+function cbt_webform_theme_registry_alter(&$theme_registry) {
+
+  if (!empty($theme_registry['webform_results_submissions'])) {
+    $theme_registry['webform_results_submissions']['preprocess functions'][] = 'cbt_webform_template_preprocess_webform_results_submissions';
+  }
+
+  //add stats link to component on webform node page
+  if (!empty($theme_registry['webform_element_wrapper'])) {
+    $theme_registry['webform_element_wrapper']['function'] = 'cbt_webform_function_webform_element_wrapper';
+  }
+}
+
+/**
+ * Alter of function theme_webform_element_wrapper
+ * @param type $element
+ * @param string $content
+ * @return string
+ */
+function cbt_webform_function_webform_element_wrapper($element, $content) {
+  $styles = '';
+  $args = arg();
+
+  if ($args[0] == 'node' && is_numeric($args[1]) && !$args[2] && !$element['#programmed']) {
+    $node = node_load($args[1]);
+    if ($node->type == 'webform') {
+
+      $styles = 'style="border:1px solid #eee; margin: 10px 0;padding:0px 10px;"';
+      //add Stats link
+      if (in_array($element['#webform_component']['type'], array('select', 'grid'))) {
+        $content.= '<div class="clear-block" style="text-align:right">' .
+                l('Stats', 'node/' . $element['#webform_component']['nid'] . '/webform/components/' . $element['#webform_component']['cid'] . '/stats', array('attributes' => array('target' => '_blank'))) .
+                '</div>';
+      }
+    }
+  }
+
+
+
+//HERE THE ORIGINAL CODE OF FUNCTION theme_webform_element_wrapper
+  // All elements using this for display only are given the "display" type.
+  if (isset($element['#format']) && $element['#format'] == 'html') {
+    $type = 'display';
+  } else {
+    $type = (isset($element['#type']) && !in_array($element['#type'], array('markup', 'textfield'))) ? $element['#type'] : $element['#webform_component']['type'];
+  }
+
+  $parents = str_replace('_', '-', implode('--', array_slice($element['#parents'], 1)));
+
+  $output = '';
+  $output .= '<div class="webform-component webform-component-' . $type . '" id="webform-component-' . $parents . '" ' . $styles . '>';
+  $output .= $content;
+  $output .= '</div>';
+  return $output;
+}
+
+/**
+ *
+ * @param type $vars
+ */
+function cbt_webform_template_preprocess_webform_results_submissions(&$vars) {
+
+  // remove IP address from rows
+  foreach ($vars['table']['#rows'] as $key => $value) {
+    unset($vars['table']['#rows'][$key][3]);
+  }
+}
+
+
+/**
+ *
+ * @param type $node
+ * @param type $component
+ * @return type
+ */
+function cbt_webform_components_stats_page($node, $component) {
+
+  module_load_include('inc', 'cbt_webform');
+  //get chart template
+  $function = 'cbt_webform_get_' . $component['type'] . '_chart_template';
+  if (function_exists($function)) {
+    $chart_node = $function($component);
+
+    //set common settings
+    $chart_node->settings['caption'] = _cbt_webform_crop_str($component['name'], variable_get('chart_caption_crop',90));
+    $chart_node->settings['yAxisName'] = 'Человек / Respondents';
+    $chart_node->settings['yAxisMinValue'] = 0;
+    $chart_node->settings['showBarShadow'] = 1;
+
+    return theme('fusionchart', 'fusionchart_node', $component['nid'] . '-' . $component['cid'] . '-' . rand(1, 99999), $chart_node);
+  }
+
+  return t('Unable to show chart!');
+}
+

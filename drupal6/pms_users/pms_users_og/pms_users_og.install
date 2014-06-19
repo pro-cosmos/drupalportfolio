@@ -1,0 +1,157 @@
+<?php
+
+
+/**
+ * Implementation of hook_install()
+ */
+function pms_users_og_install() {
+  //install tables
+  drupal_install_schema('pms_users_og');
+  db_query("UPDATE {system} SET weight = 13 WHERE name = 'pms_users_og'");
+
+  $GLOBALS['pms_users_og_install'] = true;
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function pms_users_og_enable() {
+  if ($GLOBALS['pms_users_og_install']) {
+    // Reset cached schema
+    drupal_get_schema(NULL, TRUE);
+
+    //add autoreg sponsors group
+    $ins = new stdClass();
+    $ins->rid = 0;
+    $ins->name = 'autoreg sponsors';
+    $ins->active = 0;
+    drupal_write_record('ori_og_groups', $ins);
+
+    //add autoreg sponsors consultants group
+    $ins = new stdClass();
+    $ins->rid = 0;
+    $ins->name = 'autoreg consultant';
+    $ins->active = 1;
+    drupal_write_record('ori_og_groups', $ins);
+  }
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function pms_users_og_schema() {
+  variable_set('pms_users_og_baseurl', 'admin/oriflame/pms_users_og');
+
+  $scheme = array();
+  $schema['ori_og_groups'] = _schema_ori_og_groups();
+  $schema['ori_og_groups2users'] = _schema_ori_og_groups2users();
+
+  return $schema;
+}
+
+function _schema_ori_og_groups() {
+  return array(
+    'description' => 'Ori OG groups',
+    'fields' => array(
+      'rid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Group ID'
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 100,
+        'description' => 'Group name'
+      ),
+      'active' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+        'description' => 'Group status'
+      )
+    ),
+    'primary key' => array('rid'),
+    'unique keys' => array('name' => array('name'))
+  );
+}
+
+function _schema_ori_og_groups2users() {
+  return array(
+    'description' => 'Ori OG groups2users',
+    'fields' => array(
+      'rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Group ID'
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'User uid'
+      ),
+      'rootsponsor' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Root sponsor uid'
+      )
+    ),
+    'primary key' => array('rid', 'uid'),
+    'indexes' => array(
+      'ix_rid' => array('rid'),
+    ),
+    'unique keys' => array(
+      'ix_unique' => array('rid', 'uid', 'rootsponsor')
+    )
+  );
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function pms_users_og_uninstall() {
+  drupal_uninstall_schema('ori_og_groups');
+  drupal_uninstall_schema('ori_og_groups2users');
+}
+
+
+
+/**
+ * Update `6000`: добавили группу ExtPartner
+ */
+function pms_users_og_update_6000() {
+  $ret = array();
+
+  $gid =3;
+  $q = db_query("select rid from {ori_og_groups} WHERE rid = %d limit 1", $gid);
+  if (!db_result($q)) {
+    db_query("INSERT INTO {ori_og_groups} (rid, name) VALUES (%d,'%s')", $gid, 'ExtPartner');
+  }
+
+  $ret[] = array('success' => TRUE, 'query' => check_plain('добавили группу ExtPartner'));
+
+  return $ret;
+}
+
+/**
+ * Update `6000`: добавили группу PMS_USERS_OG_ACCOUNT_VIEWPASS
+ */
+function pms_users_og_update_6001() {
+  $ret = array();
+
+  $gid =4;
+  $q = db_query("select rid from {ori_og_groups} WHERE rid = %d limit 1", $gid);
+  if (!db_result($q)) {
+    db_query("INSERT INTO {ori_og_groups} (rid, name) VALUES (%d,'%s')", $gid, 'AccountViewPass');
+  }
+
+  $ret[] = array('success' => TRUE, 'query' => check_plain('добавили группу PMS_USERS_OG_ACCOUNT_VIEWPASS'));
+
+  return $ret;
+}

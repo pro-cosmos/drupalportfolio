@@ -1,0 +1,1362 @@
+<?php
+/**
+ * @file
+ * Enables the subscription and mail system.
+ */
+date_default_timezone_set('Europe/Moscow');
+//remove after tests;
+//ini_set('display_errors', TRUE);
+//ini_set('display_startup_errors', TRUE);
+/********************** INCLUDE START *******************/
+module_load_include('inc', 'pms_users', 'pms_users.class');
+require_once('subscription.inc');
+module_load_include('inc', 'subscription', 'subscription.class');
+module_load_include('inc', 'subscription', 'subscription.tooltips');
+module_load_include('inc', 'subscription', 'subscription.gaction');
+module_load_include('inc', 'subscription', 'subscription.hooks');
+module_load_include('inc', 'subscription', 'inc/subscription_users/subscription.users');
+
+
+//********************* CONSTANTS START *********************//
+
+DEFINE("ENC_KEY", "sdk@jh!f2o3i:1h4128*&4n29137fn1&273n40172%3047g12");
+//register success page text
+DEFINE("REGISTER_SUCCESS", "register_success");
+//Email "From"
+DEFINE('MAILER_ADMIN_CONTROL', 'control@pravda-zdorovo.ru');
+DEFINE("MAILER_FROM", "mailer_from");
+DEFINE("MAILER_FROM_NAME", "mailer_from_name");
+
+
+DEFINE("DEACTIVATE_MAILS", "deactivate_mails");
+DEFINE("DEACTIVATE_MAILS_PAGE", "deactivate_mails_page");
+DEFINE("DEACTIVATE_MAILS_PAGE_SUBJECT", "deactivate_mails_page_subject");
+DEFINE("ACTIVATE_MAILS", "activate_mails");
+DEFINE("ACTIVATE_MAILS_PAGE", "activate_mails_page");
+DEFINE("ACTIVATE_MAILS_PAGE_SUBJECT", "activate_mails_page_subject");
+
+DEFINE("SUBSCRIBE_TEXT", "subscribe_text");
+DEFINE("ALREADY_ACTIVE_OR_APPROVE", "already_active_or_approve");
+DEFINE("UNSUBSCRIBE_TEXT", "unsubscribe_text");
+DEFINE("SUBSCRIBE_TO_ALL", "subscribe_to_all");
+DEFINE("REPEATREGISTR_LINK", "repeatregistr_link");
+DEFINE("CONFIRM_LINK", "confirm_link");
+DEFINE("INSTRUCTION_LINK", "instruction_link");
+DEFINE("INSTRUCTION_MINI_LINK", "instruction_mini_link");
+
+//Notification mail constants
+DEFINE("SUBSCRIPTION_APPROVE_SUBJECT", "subscription_approve_subject");
+DEFINE("SUBSCRIPTION_APPROVE_TEXT", "subscription_approve_text");
+DEFINE("SUBSCRIPTION_ACTIVATE_SUBJECT", "subscription_activate_subject");
+DEFINE("SUBSCRIPTION_ACTIVATE_TEXT", "subscription_activate_text");
+DEFINE("SUBSCRIPTION_DEACTIVATE_SUBJECT", "subscription_deactivate_subject");
+DEFINE("SUBSCRIPTION_DEACTIVATE_TEXT", "subscription_deactivate_text");
+DEFINE("SUBSCRIPTION_DECLINED_SUBJECT", "subscription_declined_subject");
+DEFINE("SUBSCRIPTION_DECLINED_TEXT", "subscription_declined_text");
+DEFINE("SUBSCRIPTION_DEACTIVATE_ADMIN_SUBJECT", "subscription_deactivate_admin_subject");
+DEFINE("SUBSCRIPTION_DEACTIVATE_ADMIN_TEXT", "subscription_deactivate_admin_text");
+DEFINE("SUBSCRIPTION_REPEATREGISTR_TEXT", "subscription_repeatregistr_text");
+
+DEFINE("SUBSCRIPTION_MAIL_TYPE_MANUAL", 1);
+DEFINE("SUBSCRIPTION_MAIL_TYPE_SUBSCRIPTION", 2);
+DEFINE("SUBSCRIPTION_MAIL_TYPE_EVENT", 3);
+
+DEFINE("SUBSCRIPTION_QUEUE_WAIT_STATUS", 0);
+DEFINE("SUBSCRIPTION_QUEUE_ERROR_STATUS", 2);
+
+//******************** CONSTANTS END *************************//
+
+/********************* HOOKS START **********************************/
+
+//hook_init
+function subscription_init(){
+
+
+  // doing postinstall work
+  if (!variable_get('ori_subscription_postinstall', 0)) { // simple hack to know whether feature is installed
+
+      if (module_exists('locale')) {
+        //import translations
+        locale_system_update(array('subscription'));
+        watchdog('subscription', 'subs_install translations');
+        }
+
+        variable_set('ori_subscription_postinstall', 1);
+  }
+
+
+  $args = arg();
+  //add css and js only where it need only
+  if ($args[0].'/'.$args[1].'/'.$args[2] == variable_get('subscription_baseurl',''))
+  {
+  //tooltips
+  drupal_add_css(drupal_get_path('module', 'subscription').'/css/jquery.tooltip.css');
+  drupal_add_js(drupal_get_path('module', 'subscription').'/js/jquery.tooltip.min.js', 'file', 'footer');
+  drupal_add_js(s_generate_tooltips(), 'inline', 'footer'); //generate data array for tooltips
+  drupal_add_js(drupal_get_path('module', 'subscription').'/js/subscription.tooltips.js', 'file', 'footer'); //Apply tooltips to elements
+  //UI blocker in ajax requests
+  //drupal_add_js(drupal_get_path('module', 'subscription').'/jquery.blockUi.js', 'file', 'footer');
+  //drupal_add_js('$(document).ajaxStart($.blockUI).ajaxStop($.unblockUI)', 'inline', 'footer');
+  }
+
+  //css
+  drupal_add_css(drupal_get_path('module', 'subscription').'/css/subscription.css');
+
+}
+
+
+
+
+
+//hook_help
+function subscription_help($path, $arg) {
+  if ($path == 'admin/help#subscription') {
+    $txt = 'Модуль создания подписок и управления их состоянием. Отправка писем. Отправка с задержкой. Шаблоны для писем.';
+    return '<p>' . $txt . '</p>';
+  }
+}
+
+//hook_perm
+function subscription_perm() {
+  return array(
+      'administer mail and subscription',
+      'view ori subscription pages',
+      'execute mailsid_send', // send selected mails to selected users
+      'execute mail_status_enable',
+      'execute mail_status_disable',
+      'execute instructions_send',
+      'execute repeated_registration_send',
+      'administer subscription mails',
+      'administer subscription tooltips',
+      'administer subscription variables',
+      'administer subscription options',
+      'administer subscription requests'
+      );
+}
+
+
+function subscription_views_api() {
+  return array('api' => 2.0,
+       'path' => drupal_get_path('module', 'subscription') .'/views'
+      );
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function subscription_theme($existing) {
+  $path = drupal_get_path('module', 'subscription') . '/templates';
+
+  return array(
+  'views_view_table__user_subscription_request__page' =>
+      array (
+      'arguments' => array('view' => NULL, 'options' => NULL, 'rows' => NULL, 'title' => NULL),
+      'template' =>'views-view-table--user-subscription-request--page',
+      'original hook' => 'views_view_table',
+      'path' => $path,
+       )
+      );
+
+}
+
+
+
+
+
+//hook_menu
+function subscription_menu() {
+  $items['admin/oriflame/subscription'] = array(
+    'title' => 'Subscription',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription')
+  );
+
+
+  $items = array_merge($items, s_create_options_menu());
+  $items = array_merge($items, s_create_mail_menu());
+  $items = array_merge($items, s_create_tooltip_menu());
+  $items = array_merge($items, s_create_subscription_menu());
+  $items = array_merge($items, s_create_user_admin_menu());
+  $items = array_merge($items, s_create_admin_menu());
+  $items = array_merge($items, s_create_user_menu());
+
+  return $items;
+}
+
+
+function s_create_admin_menu(){
+ $base = variable_get('subscription_baseurl','');
+ //admin menu
+ $items[$base.'/variables'] = array(
+    'title' => t('Variables'),
+    'description' => 'Subscription variables',
+    'position' => 'right',
+    'weight' => -4,
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer subscription variables'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+
+    $items[$base.'/variables/list'] = array(
+        'title' => t('Variables'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('subscription_variables_settings'),
+        'access arguments' => array('administer subscription variables'),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'file' => 'subscription.admin.inc'
+    );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function subscription_block($op = 'list', $delta = 0, $edit = array()) {
+  global $user;
+
+  if ($op == 'list') {
+    $blocks[0] = array('info'   => 'Ori: ' . t('Subscription'),
+                       'cache'  => BLOCK_CACHE_PER_USER,
+                       'region' =>'left',
+                       'status' =>1,
+                       'visibility' =>2,
+                       'weight' => -19
+                      );
+
+    return $blocks;
+  }
+  else if ($op == 'view') {
+    $block = array();
+    switch ($delta) {
+      case 0:
+        if (user_access('view ori subscription pages')) {
+          $output = subscription_block_content();
+
+          $block['subject'] = t('Subscription');
+          $block['content'] = $output;
+        }
+        return $block;
+    }
+  }
+}
+
+
+/**
+ *
+ * @return type
+ */
+function subscription_block_content(){
+
+$baseurl = variable_get('subscription_baseurl','');
+
+  if (user_access('administer subscription mails')) {
+        $links[] = array('title' => t('Mails'), 'href' => $baseurl . '/mail');
+    }
+
+    if (user_access('administer mail and subscription')) {
+        $links[] = array('title' => t('Subscription'), 'href' => $baseurl . '/subscription');
+    }
+
+    if (user_access('administer subscription requests')) {
+        $links[] = array('title' => t('User subscriptions'), 'href' => $baseurl . '/subscription_request');
+    }
+
+    if (user_access('administer subscription variables')) {
+        $links[] = array('title' => t('Variables'), 'href' => $baseurl . '/variables/list');
+    }
+
+    if (user_access('administer subscription tooltips')) {
+        $links[] = array('title' => t('Tooltips'), 'href' => $baseurl . '/tooltip');
+    }
+
+    if (user_access('administer subscription options')) {
+        $links[] = array('title' => t('Settings'), 'href' => $baseurl . '/options');
+    }
+
+    return theme('links', $links, array('class' => 'ori_menu'));
+}
+
+
+
+
+/**
+ * Implementation of hook_form_alter().
+ *
+ * Copied from wysiwyg_imageupload.form.inc
+ */
+function subscription_form_alter(&$form, $form_state, $form_id) {
+  //
+  // Add here all form-ids of every form that should contain wysiwyg-editor
+  //
+  $image_upload_forms = array(
+    'subscription-template-add-edit-form',
+    'subscription-mail-add-edit-form',
+    's-tooltip-add-edit-form',
+    'subscription-main-options-form',
+  );
+
+  if (in_array($form['#id'], $image_upload_forms)) {
+    if (variable_get('wysiwyg_imageupload_skip_dependencies_check', TRUE)) {
+      _wysiwyg_imageupload_check_dependencies();
+    }
+    // SO UGLY: we have to use this, as FAPI has a special case with cached forms
+    // If you save or preview the form and a validation error occurs, form_alter is not called
+    // in that case all our javascript would be missing
+    $form['#after_build'][] = '_wysiwyg_imageupload_prepare_main_form';
+  }
+
+
+  if ($form_id == 'pms_users_filter_form' && pms_users_admin_access()) {
+    $filters = $_SESSION['pms_users_filters'];
+    $form['filters']['subscription_usermail_mid'] = array(
+        '#type' => 'hidden',
+        '#default_value' => $filters['subscription_usermail_mid'],
+        '#weight' => 99
+    );
+
+    $form['filters']['subscription_usermail_status'] = array(
+        '#type' => 'hidden',
+        '#default_value' => $filters['subscription_usermail_status'],
+        '#weight' => 99
+    );
+  }
+}
+
+/********************* HOOKS END **********************************/
+
+//options menu items and pages
+function s_create_options_menu(){
+    $baseurl = variable_get('subscription_baseurl','');
+
+  $items[$baseurl.'/options'] = array(
+    'title' => 'Настройки',
+    'page callback' => 'drupal_get_form',
+    'page arguments' =>array('subscription_main_options_form', 'common'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription options'),
+    'file' => 'subscription.options.inc'
+  );
+
+  $items[$baseurl.'/options/common'] = array(
+    'title' => 'Общие',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription options'),
+    'file' => 'subscription.options.inc'
+  );
+
+  $items[$baseurl.'/options/status'] = array(
+    'title' => 'Рассылки',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' =>array('subscription_main_options_form', 'subscription'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription options'),
+    'file' => 'subscription.options.inc'
+  );
+  return $items;
+}
+
+
+
+//mail menu items and pages
+function s_create_mail_menu(){
+  $base = variable_get('subscription_baseurl','').'/mail';
+  $path = "/inc/subscription_mail/";
+
+  $items[$base] = array(
+    'title' => t('Mails'),
+    'page callback' => 'subscription_mail_list',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc',
+    'type'=>MENU_NORMAL_ITEM
+  );
+
+  $items[$base.'/list'] = array(
+    'title' => 'Список',
+    'weight' => 1,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+  $items[$base.'/add'] = array(
+    'title' => 'Добавить письмо',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' =>array('subscription_mail_add_edit_form'),
+    'weight' => 2,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+  $items[$base.'/%/edit'] = array(
+    'title' => 'Редактирование письма',
+    /*'title callback' => 'subscription_menu_mail_edit_title',
+    'title arguments' => array(3),*/
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('subscription_mail_add_edit_form', 4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+  $items[$base.'/%/delete'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_mail_delete',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+  $items[$base.'/resend/%/%subscription_user'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_mail_resend',
+    'page arguments' => array(5, 6),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+    $items[$base.'/queue/%/delete'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_mail_queue_delete',
+    'page arguments' => array(5),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+//ajax add/remove recievers
+  $items[$base.'/addreceiver'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_add_new_user_to_selected',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+  $items[$base.'/removereceiver'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_remove_user_from_selected',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+  $items[$base.'/removeallselected'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_remove_all_selected_users',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+//files page
+  $items[$base.'/%/files'] = array(
+    'title callback' => 'subscription_mail_files_title',
+    'title arguments' => array(4),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_mail_files',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+//  $items[$base.'/%/file/%/delete'] = array(
+//    'type' => MENU_CALLBACK,
+//    'page callback' => 'subscription_mail_file_delete',
+//    'page arguments' => array(4, 6),
+//    'access callback' => 'user_access',
+//    'access arguments' => array('administer subscription mails'),
+//    'file' => $path.'subscription.mail.inc'
+//  );
+
+    $items[$base.'/file/%/delete'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_mail_file_delete',
+    'page arguments' => array(5),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails')
+    //'file' => $path.'subscription.mail.inc'
+  );
+
+//save new order of mail
+  $items[$base.'/changeorder'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_mail_changeorder',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription mails'),
+    'file' => $path.'subscription.mail.inc'
+  );
+
+  return $items;
+}
+
+function subscription_mail_file_delete( $file_id) {
+  watchdog('filedel2', $file_id);
+  $file = db_fetch_array(db_query("select * from {mailfile} where id = %d", $file_id));
+  if (file_exists($file['filepath'])){
+    file_delete($file['filepath']);
+    db_query("delete from {mailfile} where id = %d", $file_id);
+  }
+
+  drupal_goto(variable_get('subscription_baseurl', '') . "/mail/".$file['mid']."/files");
+}
+
+//tooltip menu items and pages
+function s_create_tooltip_menu(){
+    $base = variable_get('subscription_baseurl','').'/tooltip';
+
+  $items[$base] = array(
+    'title' => 'Подсказки',
+    'page callback' => 's_tooltip_list',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription tooltips'),
+    'file' => 'subscription.tooltips.inc'
+  );
+
+  $items[$base.'/list'] = array(
+    'title' => 'Список',
+    'weight' => 1,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription tooltips'),
+    'file' => 'subscription.tooltips.inc'
+  );
+
+  $items[$base.'/add'] = array(
+    'title' => 'Добавить подсказку',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('s_tooltip_add_edit_form'),
+    'weight' => 2,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription tooltips'),
+    'file' => 'subscription.tooltips.inc'
+  );
+
+  $items[$base.'/%/edit'] = array(
+    'title' => 'Редактировать подсказку',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('s_tooltip_add_edit_form', 4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription tooltips'),
+    'file' => 'subscription.tooltips.inc'
+  );
+
+  $items[$base.'/%/delete'] = array(
+    'title' => 'Удалить подсказку',
+    'type' => MENU_CALLBACK,
+    'page callback' => 's_tooltip_delete',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer subscription tooltips'),
+    'file' => 'subscription.tooltips.inc'
+  );
+
+
+  return $items;
+}
+
+
+//subscriptions menu items and pages
+function s_create_subscription_menu(){
+ $base = variable_get('subscription_baseurl','').'/subscription';
+
+  $items[$base] = array(
+    'title' => t('Subscriptions list'),
+    'page callback' => 'subscription_subscription_list',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => 'subscription.sub.inc'
+  );
+
+  $items[$base.'/list'] = array(
+    'title' => t('Subscriptions list'),
+    'weight' => 1,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => 'subscription.sub.inc'
+  );
+
+  $items[$base.'/add'] = array(
+    'title' => t('Add subscription'),
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('subscription_subscription_add_edit_form'),
+    'weight' => 2,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => 'subscription.sub.inc'
+  );
+
+  $items[$base.'/%/edit'] = array(
+    'title' => t('Edit subscription'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('subscription_subscription_add_edit_form', 4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => 'subscription.sub.inc'
+  );
+
+  $items[$base.'/%/delete'] = array(
+    'type' => menu_callback,
+    'page callback' => 'subscription_subscription_delete',
+    'page arguments' => array(4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => 'subscription.sub.inc'
+  );
+  return $items;
+}
+
+//user admin menu items and pages
+function s_create_user_admin_menu(){
+
+  $path  =  '/inc/';
+  $path_users = $path.'subscription_users/';
+
+
+
+  $items['admin/subscription/mailqueue/%/delete/%'] = array(
+    'page callback' => 'subscription_usermail_delete',
+    'page arguments' => array(3,5),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => $path_users.'subscription.users.inc'
+  );
+
+  $items['admin/subscription/user/%/activate/%'] = array(
+    'page callback' => 'subscription_user_activate_subscription',
+    'page arguments' => array(3, 5),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => $path_users.'subscription.users.inc'
+  );
+
+  $items['admin/subscription/user/%/deactivate/%'] = array(
+    'page callback' => 'subscription_user_deactivate_subscription',
+    'page arguments' => array(3, 5),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => $path_users.'subscription.users.inc'
+  );
+
+  $items['admin/subscription/user/activate_mails/%'] = array(
+    'page callback' => 'subscription_user_activate_mails',
+    'page arguments' => array(4),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => $path_users.'subscription.users.inc'
+  );
+
+  $items['admin/subscription/user/deactivate_mails/%'] = array(
+    'page callback' => 'subscription_user_deactivate_mails',
+    'page arguments' => array(4),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => $path_users.'subscription.users.inc'
+  );
+
+
+
+  $pms_users_baseurl = variable_get('pms_users_baseurl','');
+
+  $items['admin/subscription/user/%subscription_user/changesubstatus/%/%'] = array(
+    'page callback' => 'subscription_user_subscription_changestatus',
+    'page arguments' => array(3, 5, 6),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => $path_users.'subscription.users.inc'
+  );
+  $items[$pms_users_baseurl.'/%subscription_user/maillist'] = array(
+    'title' => t('User messages'),
+    'page callback' => 'subscription_user_mails_list',
+    'page arguments' => array(3),
+    'type' =>  MENU_LOCAL_TASK,
+    'access callback' => 'subscription_user_mails_list_access',
+   // 'access callback' => 'user_access',
+   // 'access arguments' => array('administer mail and subscription'),
+    'file' => $path_users.'subscription.users.inc',
+    'weight'=>10
+  );
+
+  $items[$pms_users_baseurl.'/%subscription_user/subscriptions'] = array(
+    'title' => t('User subscriptions'),
+    'page callback' => 'subscription_user_subscriptions',
+    'page arguments' => array(3),
+    'type' =>  MENU_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer mail and subscription'),
+    'file' => $path_users.'subscription.users.inc',
+    'weight'=>11
+  );
+  return $items;
+}
+
+//links that common user(guest) can visit
+function s_create_user_menu(){
+  $base  =  '/inc/';
+  $base_users = $base.'subscription_users/';
+
+  $items['user/%/reg-success'] = array(
+    'title' => 'Регистрация прошла успешно',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'subscription_reg_success_page',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'file' => $base_users.'subscription.users.inc'
+  );
+
+  $items['suser/activate_mails/%'] = array(
+    'page callback' => 'subscription_user_activate_mails_user',
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'file' => $base_users.'subscription.users.inc'
+  );
+
+  $items['suser/deactivate_mails/%'] = array(
+    'page callback' => 'subscription_user_deactivate_mails_user',
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'file' => $base_users.'subscription.users.inc'
+  );
+
+  $items['suser/subscribe/all/%/%'] = array(
+    'page callback' => 'subscription_user_subscribe_all',
+    'page arguments' => array(3, 4),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'file' => $base_users.'subscription.users.inc'
+  );
+
+  $items['suser/subscribe/%/%'] = array(
+    'page callback' => 'subscription_user_subscribe',
+    'page arguments' => array(2, 3),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'file' => $base_users.'subscription.users.inc'
+  );
+
+  $items['suser/unsubscribe/%/%'] = array(
+    'page callback' => 'subscription_user_unsubscribe',
+    'page arguments' => array(2, 3),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'file' => $base_users.'subscription.users.inc'
+  );
+  return $items;
+}
+
+
+function subscription_user_mails_list_access(){
+  return pms_users_admin_access() || user_access('administer mail and subscription');
+}
+
+
+
+//public catalogs
+function get_catalogs(){
+  $catalogs = array(
+    'country' => 'Страны',
+    'state' => 'Области',
+    'town' => 'Города',
+  );
+  return $catalogs;
+}
+
+
+function load_catalog($catalog, $order_by = 'weight asc'){
+  $result_query = db_query("select id, value from {catalog}  where type='".$catalog."' order by $order_by");
+  $result = array();
+  while ($obj = db_fetch_object($result_query)) {
+    $result[$obj->id] = $obj->value;
+  }
+  return $result;
+}
+
+function load_subscriptions(){
+  foreach(Subscription::getList() as $sub){
+    $result[$sub->id] = $sub->title;
+  }
+  return $result;
+}
+
+
+function subscription_expand_regdate($element) {
+  $element['#tree'] = TRUE;
+
+  // Determine the order of day, month, year in the site's chosen date format.
+  $format = variable_get('date_format_short', 'm/d/Y - H:i');
+  $sort = array();
+  $sort['day'] = max(strpos($format, 'd'), strpos($format, 'j'));
+  $sort['month'] = max(strpos($format, 'm'), strpos($format, 'M'));
+  $sort['year'] = strpos($format, 'Y');
+  //asort($sort);
+  $order = array_keys($sort);
+
+  // Output multi-selector for date.
+  foreach ($order as $type) {
+    switch ($type) {
+      case 'day':
+        $options = drupal_map_assoc(range(1, 31));
+        $options[-1] = '';
+        break;
+      case 'month':
+        $options = drupal_map_assoc(range(1, 12), 'map_month');
+        $options[-1] = '';
+        break;
+      case 'year':
+        $options = drupal_map_assoc(range(2000, date('Y') + 5));
+        $options[-1] = '';
+        break;
+    }
+    $parents = $element['#parents'];
+    $parents[] = $type;
+    $element[$type] = array(
+      '#type' => 'select',
+      '#value' => $element['#value'][$type],
+      '#attributes' => $element['#attributes'],
+      '#options' => $options,
+    );
+  }
+
+  return $element;
+}
+
+function subscription_expand_date($element) {
+  $element['#tree'] = TRUE;
+
+  // Determine the order of day, month, year in the site's chosen date format.
+  $format = variable_get('date_format_short', 'm/d/Y - H:i');
+  $sort = array();
+  $sort['day'] = max(strpos($format, 'd'), strpos($format, 'j'));
+  $sort['month'] = max(strpos($format, 'm'), strpos($format, 'M'));
+  $sort['year'] = strpos($format, 'Y');
+  //asort($sort);
+  $order = array_keys($sort);
+
+  // Output multi-selector for date.
+  foreach ($order as $type) {
+    switch ($type) {
+      case 'day':
+        $options = drupal_map_assoc(range(1, 31));
+        $options[-1] = '';
+        break;
+      case 'month':
+        $options = drupal_map_assoc(range(1, 12), 'map_month');
+        $options[-1] = '';
+        break;
+      case 'year':
+        $options = drupal_map_assoc(range(1920, date('Y') - 10));
+        $options[-1] = '';
+        break;
+    }
+    $parents = $element['#parents'];
+    $parents[] = $type;
+    $element[$type] = array(
+      '#type' => 'select',
+      '#value' => $element['#value'][$type],
+      '#attributes' => $element['#attributes'],
+      '#options' => $options,
+    );
+  }
+
+  return $element;
+}
+
+
+function subscription_user_load($id){
+   return _subscription_user_addition(User::get($id));
+}
+
+
+/**
+ * Force sending mails of current account only
+ * @param type $account
+ */
+function subscription_user_send_ready_mails($account){
+
+  $account =  _subscription_user_addition($account, true);
+
+  if ($account->mail_status){
+    $today = subscription_today();
+    $sql = "select m.id, m.subject, m.mtext, um.id as link_id, um.uid from {usermail} um".
+           " inner join {mail} m on m.id = um.mid ".
+           " where um.uid = %d and um.status = 0 and um.senddate <= %d "; // send today and previous mails
+
+
+    $result = db_query($sql, $account->id, $today);
+
+    while ($mail = db_fetch_object($result)){
+      subscription_send_mail(
+              $mail->id,
+              $mail->subject,
+              subscription_prepare_page_mail_text($mail->mtext),
+              $account,
+              $mail->link_id);
+
+    }
+  }
+
+}
+
+
+/**
+ * send 1 part of emails
+ */
+function subscription_send_mails_part(){
+  $countSend = 0;
+  $today = subscription_today();
+  $limit = variable_get('subscription_cron_send_limit', 100);
+  $sql = "select m.id, m.subject, m.mtext, um.id as link_id, um.uid, su.mail_status  ".
+         " from {usermail} um ".
+         " inner join {mail} m on m.id = um.mid ".
+         " inner join {ori_subscription_user} su on su.id = um.uid and su.mail_status = 1 ".
+         " where um.status = 0 and um.senddate <= %d order by um.senddate LIMIT %d "; // send today and previous mails
+
+  $result = db_query($sql, $today, $limit);
+  while ($mail = db_fetch_object($result)){
+    $account = subscription_user_load($mail->uid);
+    $countSend++;
+    subscription_send_mail($mail->id,
+                              $mail->subject,
+                              subscription_prepare_page_mail_text($mail->mtext),
+                              $account,
+                              $mail->link_id);
+  }
+
+return $countSend;
+}
+
+
+/**
+ * Send one email
+ * @param type $mail_id
+ * @param type $subject
+ * @param type $text
+ * @param type $account
+ * @param type $link_id
+ */
+function subscription_send_mail($mail_id, $subject, $text, $account, $link_id = NULL){
+
+  $files_res = db_query("select filepath from {mailfile} where mid  = %d ", $mail_id);
+  $files = array();
+  while($file = db_fetch_object($files_res)){
+    $files[] = $file->filepath;
+  }
+
+  //replace tags from message with values
+  $text = _prepare_mail_text_for_user($text, $account);
+  $res = preg_match_all('/src=(["\'])(.*?)\1/', $text, $matches, PREG_PATTERN_ORDER);
+  foreach($matches[2] as $img){
+    $text = str_replace($img, $img.'?'.md5(time()), $text);
+  }
+
+  //create mail object
+  $result = _subscription_fast_mail_send($account->email, $subject, $text,'',$files);
+
+  //insert
+  $record = new stdClass();
+  $record->uid = $account->id;
+  $record->mid = $mail_id;
+  $record->status = ($result)?1:2; //2 ошибка отправки
+  $record->senddate = subscription_today();
+  if ($link_id == NULL){
+    drupal_write_record('usermail', $record);
+  }
+  else
+  {//update
+    $record->id = $link_id;
+    drupal_write_record('usermail', $record, 'id');
+  }
+
+  // let other modules do their stuff after we send email
+  module_invoke_all('subscription_user_mail_send', $record);
+}
+
+
+function subscription_send_mail_to_user($mail_id, $account){
+  $mail = Mail::get($mail_id);
+  if ($account && $account->mail_status == 1){
+    subscription_send_mail(
+            $mail->id,
+            $mail->subject,
+            subscription_prepare_page_mail_text($mail->mtext),
+            $account);
+  }
+}
+
+function subscription_prepare_page_mail_text($text){
+
+  $mail_text = "<html>";
+  $mail_text .= "<body>".$text."</body>";
+  $mail_text .= "</html>";
+  return $mail_text;
+}
+
+
+
+function s_replace_tag($tag, $value, $text){
+  return str_replace("{{". $tag . "}}", $value, $text);
+}
+
+
+
+function subscription_today(){
+  return strtotime(date('d-m-Y H:i:s')); //. " UTC");
+}
+
+//converts delay in days to delay in ms
+function subscription_convert_delay($delay){
+  $time = 24 * 3600 * $delay;
+  return $time;
+}
+
+function get_filter_value($filter, $mail_id) {
+  $result = db_result(db_query("select value from {mailfiltervalue} where filter = '%s' and mid = %d", $filter, $mail_id));
+  return ($result)? $result : '-1';
+}
+
+/*
+//title for user mails page
+function subscription_user_mails_list_title($user){
+  return "Список писем пользователя: "._user_fio($user);
+}
+
+//title for user subscriptions page
+function subscription_user_subscription_title($user){
+  return "Список рассылок пользователя: "._user_fio($user);
+}
+*/
+
+//title for mail files page
+function subscription_mail_files_title($mail_id){
+  return Mail::get($mail_id)->subject;
+}
+
+
+
+function subscription_reg_success_page($user_id){
+  $text = variable_get(REGISTER_SUCCESS, '');
+  $user = User::get($user_id);
+  $text = _prepare_mail_text_for_user($text, $user);
+  return $text;
+}
+
+/*********************************** NOTIFICAION START ********************************/
+/*
+ * Send notification mail to user about subscription status change
+ * @n_type - message type
+ * @user_id - user id
+ * @sub_ids - id of subscriptions
+ */
+function subscription_send_notification_email($n_type, $user_id, $sub_ids){
+
+  $account = User::get($user_id);
+  $subject = _get_notification_subject($n_type);
+  $text = _get_notification_text($n_type);
+  $text = _prepare_page_mail_text_for_notification($text, $sub_ids, $user_id);
+  $res = preg_match_all("/<img .*? src=\"(.*?)\" .*?>/", $text, $matches, PREG_PATTERN_ORDER);
+  foreach($matches[1] as $img){
+    $text = str_replace($img, substr($img, 1), $text);
+  }
+
+  return _subscription_fast_mail_send($account->email, $subject, $text);
+}
+
+function s_prepare_page_text_about_mail_status($mail_status, $user_id){
+  $text = variable_get($mail_status, '');
+  $text = subscription_prepare_page_mail_text($text);
+
+  $user = User::get($user_id);
+  return _prepare_mail_text_for_user($text, $user);
+}
+
+
+/*********************************NOTIFICATION END **********************************/
+
+
+
+/********************* ENCRYPTION  START ********************************/
+
+/********************* ENCRYPTION  END ********************************/
+
+/* **********************  CRON  *********************************************
+ * Get all messages with type birthday, send them to users that have birthday
+ * today
+ * Get user list. For each user check his mail queue and send messages if they
+ * are ready.
+ * Change status for theese messages
+ */
+
+
+/**
+ * Implementation of hook_cronapi().
+ */
+function subscription_cronapi($op, $job = NULL) {
+  $items['subscription_cron'] = array(
+    'description' => 'Send subscription emails.',
+    'rule' => '* * * * *',
+  );
+
+  return $items;
+}
+
+/**
+ *
+ */
+function subscription_cron(){
+
+  global $base_url;
+
+  $protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+
+  $domainName = $_SERVER['HTTP_HOST'];
+  $base_url = $protocol.$domainName . '/partner';
+
+  //TODO: remove it by common "subscription_mails_send_users" function
+  //Add to queue birthday mails
+  subscription_mail_queue_add_birthday();
+  //Add to queue instructions send emails
+  subscription_mail_queue_add_instructions();
+
+  //send all ready mails
+  $countSend = subscription_send_mails_part();
+
+  if ($countSend>0)
+    watchdog('subscription', 'Cron: Send %num mails', array('%num'=>$countSend), WATCHDOG_INFO);
+}
+
+
+/**
+ * Add to queue instructions send emails
+ */
+function subscription_mail_queue_add_instructions(){
+
+  $limit = variable_get('subscription_cron_send_limit', 100);
+  $status = 5; //todo: лучше брать отсюда PMS_USERS_STATUS_NUMBER_ASSIGNED но почему то не пашет ;
+  $uresult = db_query("select u.id,u.cid from {ori_user} u inner join {ori_subscription_user} su on u.id=su.id
+      where su.mail_status = 1 and u.status = %d LIMIT %d",$status, $limit);
+  if ($uresult){
+    while($user = db_fetch_object($uresult)){
+      //add user instructions mail to queue
+      subscription_user_send_event_mails($user->id, variable_get('subscription_instructionsent_event',6));
+    }
+  }
+
+}
+
+
+
+/**
+ * add birthday mails to queue just 1 time, not send them
+ */
+function subscription_mail_queue_add_birthday(){
+
+  $today = date('m.d', subscription_today());
+  $last_birthday_send = variable_get('last_birthday_send', NULL);
+
+  if ($last_birthday_send != $today){
+    //flag of adding mail to log
+    $add_to_log = false;
+
+    //get today birthday users with enabled mail_status
+    $uresult = db_query("select u.id,u.cid from {ori_user} u inner join {ori_subscription_user} su on u.id=su.id
+      where FROM_UNIXTIME(u.birthday,'%%m.%%d') = '%s' and su.mail_status = 1 and u.status > %d ", $today, PMS_USERS_STATUS_NEW);
+    //get users array
+    $users = array();
+    while($user = db_fetch_object($uresult)){
+      $users[] = $user;
+    }
+
+    //get all mails assigned to birthday event
+    $mresult = db_query("select m.* from {mail} m inner join {mailevent} me on me.mid = m.id
+      where m.stype = ".SUBSCRIPTION_MAIL_TYPE_EVENT." and me.eid = 2"); //2 is id of bithday email
+    while ($mail = db_fetch_object($mresult)){
+      foreach($users as $user){
+        $user_country = $user->cid;
+        $country_filter = get_filter_value('user country', $mail->id);
+        if ($country_filter != -1 and $user_country != $country_filter){
+          continue;
+        }
+
+        //get user already sended mails log entries
+        $queue_record = db_fetch_object(db_query("select mid from {usermail} where mid = %d and uid = %d", $mail->id, $user->id));
+        if (!$queue_record){
+
+          $record = new stdClass();
+          $record->uid = $user->id;
+          $record->mid = $mail->id;
+          $record->status = 0;
+          $record->senddate = subscription_today(); //$today;
+          drupal_write_record('usermail', $record);
+
+          //mails been added
+          $add_to_log = true;
+        }
+      }
+    }
+
+    //if no mails to add
+    if (!$add_to_log)
+       variable_set('last_birthday_send', $today);
+  }
+}
+
+  /**
+   *
+   * @param type $uid
+   * @param type $status
+   * @return type
+   */
+  function subscription_user_set_status($id, $status = 1){
+  $record = new stdClass();
+  $record->id = $id;
+  $record->mail_status = $status;
+  $record->mail_status_date = time();
+
+  // let other modules do their stuff after we send email
+  module_invoke_all('subscription_user_set_mail_status', $record);
+
+  $ins = @drupal_write_record('ori_subscription_user', $record);
+  if(!$ins){// go update
+    return drupal_write_record('ori_subscription_user', $record, 'id');
+    }
+  }
+
+
+
+
+/**
+ * Template for selectable row fields. This is used by grid,
+ * list and unformatted view plugins.
+ * @param $vars template variables
+ */
+function template_preprocess_views_view_table__user_subscription_request__page(&$vars) {
+ template_preprocess_views_view_table($vars);
+
+ }
+
+
+/**
+ * Fast send message without logging and queue
+ * @param type $to
+ * @param type $subject
+ * @param type $body
+ * @param type $from
+ * @return type
+ */
+function _subscription_fast_mail_send($to, $subject, $body, $from='', $files='') {
+
+  if (!$from) {
+    $from = variable_get(MAILER_FROM, '');
+    $name = variable_get(MAILER_FROM_NAME, '');
+  } else {
+    $name = $from;
+  }
+
+  ori_base_include_phpmailer();
+
+  $mailer = new PHPMailer();
+  $mailer->CharSet = "UTF-8";
+  $mailer->Encoding = "base64";
+  $mailer->Sender = $from;
+  $mailer->Subject = $subject;
+  $mailer->SetFrom($from, $name, false);
+  $mailer->AddAddress($to);
+  $mailer->AddReplyTo($from, $name);
+  $mailer->MsgHTML($body);
+  //add attachments
+  if ($files) {
+    foreach($files as $file){
+      if (is_file($file))
+        $mailer->AddAttachment($file);  // attachment
+    }
+  }
+  $result = $mailer->Send();
+
+  if (!$result || !empty($mailer->ErrorInfo)) {
+    watchdog('subscription','Error send mail to: %to ', array('%to'=>$to), WATCHDOG_ERROR);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Send user registration data to admin
+ * @param type $account
+ */
+function subscription_send_registration2admin($account) {
+
+  $body = array();
+
+  $country = Country::get((int)$account->cid);
+  $indexdata = OriGeo::init($country->geocode)->getIndex($account->pindex);
+  $d = array();
+  $d['stid'] = $indexdata->state; // (String, 35 characters ) Ивановская область
+
+  $exclude = array('tid','pstown','sponsor','autoreg','instruction_send','email_confirmed','regsourceid','psfrendemail','status','role');
+  foreach ($account as $k => $v) {
+
+    if ($k=='cid'){
+       $c = Country::get((int)$v);
+       $v = $c->title;
+    }
+    if ($k=='cmid'){
+       $v = $v>0? 'Другое':'Город';
+    }
+    if (isset($d[$k])){
+      $v = $d[$k];
+    }
+    if (in_array($k, array('regdate','birthday'))){
+       $v = date('d.m.Y H:i',$v);
+    }
+    if ($k=='psid' && $v>0){
+      $sponsor = User::get(array('uid' => (int)$v));
+      $v = $sponsor->firstname . ' ' . $sponsor->middlename . ' ' . $sponsor->lastname. ' (' . $sponsor->regnumber . ')';
+      $k = 'Спонсор';
+    }
+    if ($k=='sex'){
+      $v = $v? 'Муж.':'Жен.';
+      $k = 'Пол';
+    }
+    if ($k=='purid') {
+       $purpose_types = variable_get('constant_purposes', array());
+       $v = $purpose_types[$v];
+    }
+
+
+    if (!in_array($k,$exclude))
+       $body[] = '<b>'.t($k) . '</b>: ' . $v;
+  }
+  $body = implode('<br />', $body);
+
+  //return $body;
+
+  _subscription_fast_mail_send(
+      MAILER_ADMIN_CONTROL, t('New user registration @email ', array('@email' => $account->email)), $body
+  );
+}

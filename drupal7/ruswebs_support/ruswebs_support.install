@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function ruswebs_support_install() {
+   variable_set('ruswebs_support_xmlrpc_server', 'http://annkir.ru.ct101.ruswebs.ru/xmlrpc.php');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ruswebs_support_uninstall() {
+  // Delete variables.
+  variable_del('ruswebs_support_xmlrpc_server');
+}

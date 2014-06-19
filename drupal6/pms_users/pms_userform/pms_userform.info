@@ -1,0 +1,8 @@
+name = Oriflame PMS user form
+package = "Oriflame"
+description = Oriflame PMS user form
+version = "6.x-1.0-dev"
+core = 6.x
+project="pms_userform"
+dependencies[] = ori_server
+dependencies[] = jquery_update

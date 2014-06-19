@@ -1,0 +1,351 @@
+<?php
+
+/*
+ * Implements hook_init
+ */
+
+function ruswebs_support_init() {
+
+}
+
+/**
+ * Implements hook_menu().
+ */
+function ruswebs_support_menu() {
+  $items = array();
+
+  $items['admin/config/content/ruswebs_support'] = array(
+    'title' => 'Ruswebs support configuration',
+    'description' => 'Configure Ruswebs support.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ruswebs_support_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+  );
+
+
+  $items['ruswebs_support/%ctools_js/feedback'] = array(
+    'title' => 'Feedback',
+    'page callback' => 'ruswebs_support_feedback',
+    'page arguments' => array(1),
+    'access callback' => 'user_access',
+    'access arguments' => array('access ruswebs support'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['ruswebs_support/%ctools_js/close'] = array(
+    'page callback' => 'ruswebs_support_feedback_form_close',
+    'page arguments' => array(1),
+    'access callback' => 'user_access',
+    'access arguments' => array('access ruswebs support'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function ruswebs_support_permission() {
+  return array(
+    'access ruswebs support' => array(
+      'title' => t('Access ruswebs support')
+    )
+  );
+}
+
+/**
+ * Menu callback. Admin setting page for ruswebs_support.
+ */
+function ruswebs_support_settings() {
+  $pre = 'ruswebs_support_settings_';
+
+  $form[$pre . 'visibility'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#title' => t('Visibility'),
+    '#tree' => TRUE
+  );
+  $default = variable_get($pre . 'visibility', false);
+  $form[$pre . 'visibility']['allowed_roles'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Allowed roles'),
+    '#options' => user_roles(),
+    '#default_value' => $default['allowed_roles']
+  );
+  $form[$pre . 'view'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#title' => t('View settings'),
+    '#tree' => TRUE
+  );
+  $options = array('left' => t('Left side'), 'right' => t('Right side'), 'top' => t('Top side'));
+  $default = variable_get($pre . 'view', false);
+  $form[$pre . 'view']['icon_position'] = array(
+    '#type' => 'radios',
+    '#title' => t('Position of icon'),
+    '#options' => $options,
+    '#default_value' => $default['icon_position']
+  );
+
+
+
+
+  $form[$pre . 'send_methods'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#title' => t('Send methods'),
+    '#tree' => TRUE
+  );
+  $form[$pre . 'send_methods']['xmlrpc_server'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Ruswebs xmlrpc server'),
+    '#default_value' => variable_get('ruswebs_support_xmlrpc_server', ''),
+    '#description' =>'Enter url of xmlrpc server example: <b>http://site.ru/xmlrpc.php</b>'
+  );
+  $methods = array('email' => t('Email send'), 'tracker' => t('Ruswebs tracker'), 'jabber' => t('Jabber'));
+  $default = variable_get($pre . 'send_methods', false);
+  $form[$pre . 'send_methods']['methods'] = array(
+    '#type' => 'radios',
+    '#title' => t('Send methods'),
+    '#options' => $methods,
+    '#default_value' => $default['methods']
+  );
+  $form[$pre . 'send_methods']['email'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Email send settings'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="ruswebs_support_settings_send_methods[methods]"]' => array('value' => 'email'),
+      ),
+    ),
+  );
+  $form[$pre . 'send_methods']['email']['option1'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => $default['email']['option1'],
+    '#title' => t('Example email send method option.'),
+  );
+
+
+  $form[$pre . 'send_methods']['tracker'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Tracker send settings'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="ruswebs_support_settings_send_methods[methods]"]' => array('value' => 'tracker'),
+      ),
+    ),
+  );
+  $form[$pre . 'send_methods']['tracker']['option1'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => $default['tracker']['option1'],
+    '#title' => t('Example tracker send method option.'),
+  );
+
+
+  $form[$pre . 'send_methods']['jabber'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Jabber send settings'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="ruswebs_support_settings_send_methods[methods]"]' => array('value' => 'jabber'),
+      ),
+    ),
+  );
+  $form[$pre . 'send_methods']['jabber']['option1'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => $default['jabber']['option1'],
+    '#title' => t('Example jabber send method option.'),
+  );
+
+
+  $form['#submit'][] = 'ruswebs_support_settings_submit';
+
+  return system_settings_form($form);
+}
+
+/**
+ * Form submission handler for search_admin_settings().
+ */
+function ruswebs_support_settings_submit($form, &$form_state) {
+
+  $values = $form_state['values'];
+  $allowed_rids = $values['ruswebs_support_settings_visibility']['allowed_roles'];
+
+  foreach ($allowed_rids as $rid => $checked) {
+    $permission = array('access ruswebs support' => (int) $checked > 0 ? 'access ruswebs support' : 0);
+    user_role_change_permissions($rid, $permission);
+  }
+
+  // Clear the cached pages and blocks.
+  cache_clear_all();
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function ruswebs_support_page_alter(&$page) {
+  $pre = 'ruswebs_support_settings_';
+
+  $position = variable_get($pre . 'view', false);
+
+  if (user_access('access ruswebs support')) {
+    drupal_add_css(drupal_get_path('module', 'ruswebs_support') . '/css/ruswebs_support.css');
+
+    // Include the CTools tools that we need.
+    ctools_include('ajax');
+    ctools_include('modal');
+
+    // Add CTools' javascript to the page.
+    ctools_modal_add_js();
+
+    // Create our own javascript that will be used to theme a modal.
+    $sample_style = array(
+      'ruswebs-support-feedback' => array(
+        'modalSize' => array(
+          'type' => 'fixed',
+          'width' => 500,
+          'height' => 300,
+          'addWidth' => 20,
+          'addHeight' => 15,
+        ),
+        'modalOptions' => array(
+          'opacity' => .5,
+          'background-color' => '#000',
+        ),
+        'animation' => 'fadeIn',
+        'modalTheme' => 'CToolsSampleModal',
+        'throbber' => theme('image', array('path' => ctools_image_path('ajax-loader.gif', 'ctools_ajax_sample'), 'alt' => t('Loading...'), 'title' => t('Loading'))),
+      ),
+    );
+
+    drupal_add_js($sample_style, 'setting');
+
+    ctools_add_js('ctools-ajax-sample', 'ctools_ajax_sample');
+    ctools_add_css('ctools-ajax-sample', 'ctools_ajax_sample');
+
+
+    $link = ctools_modal_text_button('', 'ruswebs_support/nojs/feedback', t('Send feedback'), 'ctools-modal-ruswebs-support-feedback');
+
+    $page['page_bottom']['ruswebs_support'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div id="ruswebs-support-link" class="' . $position['icon_position'] . '">' . $link . '</div>',
+    );
+  }
+}
+
+function ruswebs_support_feedback_form() {
+  global $user;
+
+  drupal_add_js(drupal_get_path('module', 'ruswebs_support') . "/js/html2canvas.min.js");
+  drupal_add_js(drupal_get_path('module', 'ruswebs_support') . "/js/ruswebs_support.js");
+
+
+  $form = array();
+
+  $form['message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message')
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#prefix' => '<div class="align_center">',
+    '#suffix' => '</div>'
+  );
+
+
+  //    текущий полный урл.
+  $form['url'] = array('#type' => 'hidden', '#value' => $_SERVER['HTTP_REFERER']);
+//    текущий аккаунт друпала.
+  $_user = $user;
+  $_user->pass = '';
+  $form['account'] = array('#type' => 'hidden', '#value' => serialize($_user));
+//    текущее время.
+  $form['timestamp'] = array('#type' => 'hidden', '#value' => time());
+//    если возможно, текущий DOM страницы. Надо прикинуть, полезна ли эта информация.
+
+  $form['screenshot'] = array('#type' => 'hidden', '#value' => '');
+
+  //drupal_add_js("  alert('inline'); ", 'inline');
+ //$form['#attached']['js'][] = array(ctools_attach_js('ruswebs_support','ruswebs_support'));
+
+  return $form;
+}
+
+/**
+ * A modal login callback.
+ */
+function ruswebs_support_feedback($js = NULL) {
+  // Fall back if $js is not set.
+  if (!$js) {
+    return drupal_get_form('ruswebs_support_feedback_form');
+  }
+
+  ctools_include('modal');
+  ctools_include('ajax');
+
+  $form_state = array(
+    'title' => t('Feedback'),
+    'ajax' => TRUE,
+  );
+  $output = ctools_modal_form_wrapper('ruswebs_support_feedback_form', $form_state);
+
+
+  if (!empty($form_state['executed'])) {
+    $form = array();
+    $result = _ruswebs_support_feedback_form_submit($form, $form_state);
+    // We'll just overwrite the form output if it was successful.
+    $output = array();
+    $inplace = ctools_ajax_text_button(t('Close'), 'ruswebs_support/nojs/close', t('Close'));
+    $output[] = ctools_modal_command_display(t('Feedback'), '<div class="modal-message" style="text-align:center">' . $result . '<br>' . $inplace . '</div>');
+  }
+  print ajax_render($output);
+  exit;
+}
+
+function _ruswebs_support_feedback_form_submit(&$form, &$form_state) {
+  global $user;
+dpm($form_state);
+dpm($_POST);
+  $send_method = variable_get('ruswebs_support_settings_send_methods', false);
+
+  $param = $form_state['values'];
+  $param['site_name']   = $_SERVER['HTTP_HOST'];
+  $param['send_method'] = $send_method['methods'];
+  $param = serialize($param);
+
+  $server = url(variable_get('ruswebs_support_xmlrpc_server', ''), array('external' => TRUE));
+  $resp = xmlrpc($server, array('ruswebs_server.feedback' => array($param)));
+  $result = unserialize($resp);
+//dpm($param);
+  if (!$result) {
+    $out = t('Error'); // return from xmlrpc(): Error: @errno, Message: @message', array('@errno' => xmlrpc_errno(), '@message' => xmlrpc_error_msg())), 'error'
+  } else {
+    $out = $result['msg'];
+    ////t('The XML-RPC server returned this response: <pre>@response</pre>', array('@response' => print_r($result, TRUE)))
+  }
+
+  return $out;
+}
+
+function ruswebs_support_feedback_form_close($js) {
+  if (!$js) {
+    // we should never be here out of ajax context
+    return MENU_NOT_FOUND;
+  }
+
+  ctools_include('modal');
+  ctools_include('ajax');
+
+  $commands = array();
+  $commands[] = ctools_modal_command_dismiss();
+
+  print ajax_render($commands);
+  exit;
+}
+

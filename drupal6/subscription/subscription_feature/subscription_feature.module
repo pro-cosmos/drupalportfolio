@@ -1,0 +1,3 @@
+<?php
+
+include_once('subscription_feature.features.inc');

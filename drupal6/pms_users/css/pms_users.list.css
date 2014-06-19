@@ -1,0 +1,106 @@
+table tr td table {
+	margin:0px;
+}
+table td
+{
+	padding: 2px;
+}
+td.row-label
+{
+  font-weight: bold;
+}
+td.row-value
+{
+  width: 500px;
+}
+td div.form-item{
+  margin: 0 0 0 0;
+}
+table tbody {
+	border: none;
+}
+fieldset legend
+{
+  text-decoration: underline;
+}
+div.form-item label{
+	display: none;
+}
+input.error, textarea.error, select.error{
+  border:1px solid #C52020;
+  color: #494949;
+}
+.form-item input.error, .form-item textarea.error, .form-item select.error {
+    border: 1px solid red;
+}
+#edit-mprefix-wrapper, #edit-tccode-wrapper, #edit-mccode-wrapper{
+	display:inline;
+}
+
+.group_operations_description {padding:0px 10px 10px 10px}
+ul.selected-items {list-style: square outside !important;}
+ul.selected-items li {margin-left:10px;list-style: square outside !important;}
+
+.fieldset-title a i {color:green}
+.fieldset-title a b {color:red}
+
+tr.disabled td {background:#FFE4E0}
+
+#pms_users_table tr.myodd td {background:#F1F1F1}
+#pms_users_table tr.myeven td {background:#FFF}
+
+
+.operations .form-submit {
+    margin: 1px;
+    padding: 0px !important;
+    text-align: center;
+    border:none !important;
+    width: 24px;
+    height:24px;
+}
+.operations {text-align:right;}
+
+.mail_error  {
+ background: transparent url('../images/mail_error.png') no-repeat scroll 50% 0 !important;
+ padding: 2px 12px;
+}
+
+.button_mail_status_disable {
+ background: transparent url('../images/mail_disable.png') no-repeat scroll 0 0 !important;
+}
+.button_mail_status_enable {
+ background: transparent url('../images/mail_enable.png') no-repeat scroll 0 0 !important;
+}
+
+.button_users_enable {
+ background: transparent url('../images/users_enable.png') no-repeat scroll 0 0 !important;
+}
+.button_users_delete {
+ background: transparent url('../images/users_delete.png') no-repeat scroll 0 0 !important;
+}
+.button_users_remove {
+ background: transparent url('../images/users_remove.png') no-repeat scroll 0 0 !important;
+}
+.button_user_sendpassword {
+ background: transparent url('../images/user_sendpassword.png') no-repeat scroll 0 0 !important;
+}
+.button_instructions_send {
+ background: transparent url('../images/instructions_send.png') no-repeat scroll 0 0 !important;
+}
+.button_instructions_send1 {
+ background: transparent url('../images/instructions_send1.png') no-repeat scroll 0 0 !important;
+}
+
+#edit-psid-wrapper {float:left}
+#edit-psid-none-wrapper {padding:3px 0px 1px 10px; float:left}
+
+:disabled {
+    background-color:#eeeeee !important;
+}
+
+#edit-town-wrapper {display:inline; margin-right:10px}
+
+.green-user{
+    color: orange;
+    font-weight: bold;
+}

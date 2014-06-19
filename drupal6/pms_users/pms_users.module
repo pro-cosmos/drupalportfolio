@@ -1,0 +1,468 @@
+<?php
+
+module_load_include('inc', 'pms_users', 'pms_users');
+module_load_include('inc', 'pms_users', 'pms_users.gaction');
+module_load_include('inc', 'pms_users', 'pms_users.hooks');
+module_load_include('module', 'pms_users_og', 'pms_users_og');
+
+// base url for module pages
+define('PMS_USERS_ADMIN_ID', 1);
+
+define('PMS_USERS_ADMIN_ROLE', 3);
+define('PMS_USERS_OPERATOR_ROLE', 4);
+define('PMS_USERS_PARTNER_ROLE', 5);
+define('PMS_USERS_MODERATION_ROLE', 6);
+define('PMS_USERS_LEADER_ROLE', 7);
+define('PMS_USERS_DIRECTOR_ROLE', 8);
+
+
+define('PMS_USERS_STATUS_NEW', 1);
+define('PMS_USERS_STATUS_DISABLED', 4);
+define('PMS_USERS_STATUS_CONFIRMED', 2);
+define('PMS_USERS_STATUS_NUMBER_ASSIGNED', 5);
+define('PMS_USERS_STATUS_INSTRUCTIONS_SENT', 7);
+
+
+/**
+ * По этому урлу работает JSON сервис, который вернет данные партнера,
+ * если ему передать фамилию партнера
+ */
+define('PMS_USERS_URL_PARTNER_BY_NAME', 'admin/oriflame/pms_users/js/autocomplete/partner-by-lastname');
+
+
+/**
+ * Implementation of hook_init().
+ */
+function pms_users_init() {
+  if (!variable_get('pms_users_after_install', false)) {
+    _pms_users_after_install();
+  }
+
+  //для перевода строк которые не находятся в поиске переводов
+   if (!variable_get('pms_users_translations_install', false)) {
+    t('Call');
+
+    variable_set('pms_users_translations_install', true);
+   }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function pms_users_menu() {
+  $baseurl = variable_get('pms_users_baseurl', '');
+
+  $items[$baseurl] = array(
+    'title' => t('Users list'),
+    'description' => t('Users list'),
+    'page callback' => 'pms_users_page',
+    'access callback' => 'pms_users_page_access',
+    'file' => 'pms_users.pages.inc',
+    'type' => MENU_NORMAL_ITEM //,MENU_LOCAL_TASK
+  );
+
+  $items[$baseurl . '/%'] = array(
+    'title' => t('User Ori profile view'),
+    'page callback' => 'pms_users_edit_page',
+    'page arguments' => array(3),
+    'type' => MENU_NORMAL_ITEM,
+    'access callback' => 'pms_users_edit_user_access',
+    'access arguments' => array(3),
+    'file' => 'pms_users.pages.inc'
+  );
+
+  $items[$baseurl . '/%/edit'] = array(
+    'title' => t('User Ori profile'),
+    'page callback' => 'pms_users_edit_page',
+    'page arguments' => array(3),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'access callback' => 'pms_users_edit_user_access',
+    'access arguments' => array(3),
+    'file' => 'pms_users.pages.inc'
+  );
+
+  $items[$baseurl . '/%pms_users_drupalaccount/drupalprofile'] = array(
+    'title' => t('User Drupal profile'),
+    'page callback' => 'pms_users_drupalprofile_page',
+    'page arguments' => array(3),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => 'pms_users_admin_access',
+    'file' => 'pms_users.pages.inc',
+    'weight' => 2
+  );
+
+  $items[$baseurl . '/groupaction/%'] = array(
+    'title' => t('Users list'),
+    'description' => t('Users list'),
+    'page callback' => 'pms_users_groupaction_page',
+    'page arguments' => array(4),
+    'access arguments' => array('view ori users pages'),
+    'file' => 'pms_users.pages.inc',
+    'type' => MENU_NORMAL_ITEM
+  );
+
+  $items[$baseurl . '/%/oldprofile'] = array(
+    'title' => t('User Old profile view'),
+    'page callback' => 'pms_users_oldprofile_page',
+    'page arguments' => array(3),
+    'type' => MENU_LOCAL_TASK,
+    'access callback' => 'user_access',
+    'access arguments' => array('access user profiles'),
+    'file' => 'pms_users.pages.inc',
+    'weight' => 99
+  );
+
+  $items[PMS_USERS_URL_PARTNER_BY_NAME] = array(
+    'title' => 'Get partner',
+    'page callback' => 'pms_users_get_partner_by_lastname',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function pms_users_views_api() {
+  return array(
+    'api' => '2',
+  );
+}
+
+/**
+ * Access callback for pms_users_page
+ */
+function pms_users_page_access() {
+  global $user;
+
+  //allow for superadmin
+  if (pms_users_admin_access())
+    return TRUE;
+
+  //allow for superadmin
+  if (pms_users_admin_access())
+    return TRUE;
+
+  //allow if current user is sponsor of account
+  if (user_access('view ori users pages')) {
+    if (user_access('user is partner')) {
+      //chek account child users
+      $exists_child_users = User::get(array('psid' => $user->uid));
+      return !empty($exists_child_users);
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns TRUE if current user has partner role
+ */
+function pms_users_is_sponsor() {
+  global $user;
+  return sizeof($user->roles) == 2 && in_array(PMS_USERS_PARTNER_ROLE, array_keys($user->roles));
+}
+
+/**
+ * Returns TRUE if current user has operator role
+ */
+function pms_users_is_operator() {
+  global $user;
+  return sizeof($user->roles) == 2 && in_array(PMS_USERS_OPERATOR_ROLE, array_keys($user->roles));
+}
+
+/**
+ * Returns TRUE if current user has admin role
+ */
+function pms_users_is_admin() {
+  global $user;
+  return in_array(PMS_USERS_ADMIN_ROLE, array_keys($user->roles)) || $user->uid == 1;
+}
+
+/**
+ *
+ * @global type $user
+ * @param type $del_rid
+ * @return type
+ */
+function pms_users_admin_access($del_rid = 0) {
+  global $user;
+  $admin_roles = array(PMS_USERS_ADMIN_ROLE => 1, PMS_USERS_OPERATOR_ROLE => 1);
+  if ($del_rid)
+    unset($admin_roles[$del_rid]);
+
+  $roles = array_intersect_key($admin_roles, $user->roles);
+  return ($user->uid == 1 || !empty($roles));
+}
+
+/**
+ *
+ * @global type $user
+ * @param type $id
+ * @return type
+ */
+function pms_users_edit_user_access($id) {
+  global $user;
+
+  // allow for superadmin
+  if (pms_users_admin_access())
+    return TRUE;
+
+  // allow if current user is sponsor of account
+  if (user_access('view ori users pages')) {
+    $account = User::get($id);
+    $is_sponsor_of_user = $account->psid == $user->uid;
+
+    return $is_sponsor_of_user || $account->uid == $user->uid;
+  }
+
+  return FALSE;
+}
+
+/**
+ * return drupal account by ori user id
+ * @param type $id
+ * @return type
+ */
+function pms_users_drupalaccount_load($id = NULL) {
+  //load ori account
+  $account = User::get($id);
+
+  return user_load($account->uid);
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function pms_users_perm() {
+  return array(
+    'view ori users pages',
+    'view drupal profile',
+    'delete ori users',
+    'execute users_remove',      //group action button permission
+    'execute users_delete',      //group action button permission
+    'execute users_enable',      //group action button permission
+    'execute user_sendpassword', //group action button permission
+    'execute role_add',
+    'execute role_remove',
+    'view users_disabled',
+    'add ori users',
+    'view ori users list',
+    'user is partner'
+  );
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function pms_users_block($op = 'list', $delta = 0, $edit = array()) {
+  global $user;
+
+  if ($op == 'list') {
+    $blocks[0] = array('info' => 'Ori: ' . t('Users list'),
+      'cache' => BLOCK_CACHE_PER_USER,
+      'region' => 'left',
+      'status' => 1,
+      'visibility' => 2,
+      'weight' => -15
+    );
+
+    return $blocks;
+  }
+  else if ($op == 'view') {
+    $block = array();
+    switch ($delta) {
+      case 0:
+        if (user_access('view ori users pages')) {
+          $output = pms_users_block_content();
+
+          $block['subject'] = t('Users');
+          $block['content'] = $output;
+        }
+        return $block;
+    }
+  }
+}
+
+/**
+ * Block - user list - content
+ */
+function pms_users_block_content() {
+  global $user;
+
+  $account = User::get(array('uid' => $user->uid));
+  $baseurl = variable_get('pms_users_baseurl', '');
+
+  if ($account && user_access('view ori users pages'))
+    $links[] = array('title' => t('My profile'), 'href' => $baseurl . '/' . $account->id . '/edit');
+
+  //user list menu
+  if (pms_users_page_access())
+    $links[] = array('title' => t('Users list'), 'href' => $baseurl);
+
+  //add links from other modules
+  drupal_alter('pms_users_block_links', $links);
+
+  return empty($links) ? '' : theme('links', $links, array('class' => 'ori_menu'));
+}
+
+/**
+ * Returns partner data searched by partner's id
+ * @param int $uid partner id
+ * @return object
+ */
+function pms_users_get_partner_by_id($id) {
+  if (!is_numeric($id))
+    return FALSE;
+
+  return User::get($id);
+}
+
+/**
+ * Loads a list of partner emails by a list of partner IDs.
+ * @param array $partner_ids
+ * @return array of partners emails
+ */
+function pms_users_get_partner_emails_by_ids($partner_ids) {
+  if (!is_array($partner_ids))
+    return FALSE;
+
+  $list = User::getEmailsByIDs($partner_ids);
+
+  return array_unique($list);
+}
+
+/**
+ * Loads partner record by partner's Drupal User ID
+ * @param int $uid Drupal uid
+ * @return FALSE if not found, object with partner info otherwise
+ */
+function pms_users_get_partner_by_uid($uid) {
+  if (!is_numeric($uid))
+    return FALSE;
+
+  return User::get(array('uid' => $uid));
+}
+
+/**
+ * Implementation of hook_user().
+ */
+function pms_users_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'update':
+      //save original password
+      if ($_account = User::get(array('uid' => $account->uid))) {
+        User::save($_account->id, array('drupalpassword' => $edit['pass']));
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function pms_users_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+
+  if ($form_id == 'pms_users_edit_form') {
+
+    //disable for all
+    $form['purposeType']['#disabled'] = 'disabled';
+    $form['pother']['#disabled'] = 'disabled';
+
+    // if no admin roles
+    if (!pms_users_admin_access()) {
+      $mode = ($user->uid == $form['uid']['#value']) ? 'partner' : 'partnerchild';
+
+      //alter form for partner
+      _pms_users_edit_partner_form_alter($form, $form_state, $mode);
+    }
+
+    if ($mode != 'partnerchild') {
+      //add fields from drupal profile
+      _pms_users_edit_extra_form_alter($form, $form_state, $mode);
+    }
+  }
+
+  if ($form_id == 'pms_users_filter_form') {
+    //check allowed fields
+    if (!pms_users_admin_access()) {
+      _pms_users_filter_form_alter($form, $form_state);
+    }
+  }
+}
+
+/**
+ * Create ori account
+ * @param type $account
+ * @return type
+ */
+function pms_users_create_user($account) {
+  $result = drupal_write_record('ori_user', $account);
+
+  module_invoke_all('pms_users_after_create', $account);
+
+  return $result;
+}
+
+/**
+ * Обновляет ori_user запись
+ * @param object $editedaccount текущая версия
+ * @param array $values новые данные
+ */
+function pms_users_update_user($editedaccount, $values) {
+  $oldaccount = User::get($editedaccount->id);
+
+  // let other modules do their stuff before we save
+  $err = module_invoke_all('ori_user_pre_save', $oldaccount, $values);
+
+  if (empty($err)) {
+    //save account to db
+    drupal_write_record('ori_user', $editedaccount, array('id', 'uid'));
+
+    // let other modules do their stuff after we saved
+    module_invoke_all('ori_user_after_save', $oldaccount, $editedaccount, $values);
+
+    drupal_set_message('Данные успешно сохранены.');
+  }
+  else
+    drupal_set_message('Во время сохранения данных произошла ошибка. Пожалуйста, попробуйте немного позже.', 'error');
+}
+
+/**
+ * Page callback - вернет данные партнера по его фамилии
+ */
+function pms_users_get_partner_by_lastname($string = '') {
+  global $user;
+  if ($user->uid != 1)
+    return NULL;
+
+  // The user enters a comma-separated list of tags. We only autocomplete the last tag.
+  $array = drupal_explode_tags($string);
+
+  // Fetch last tag
+  $last_string = trim(array_pop($array));
+  $matches = array();
+  if ($last_string != '') {
+    $prefix = count($array) ? implode(', ', $array) . ', ' : '';
+
+    if (strpos('anonymous', strtolower($last_string)) !== FALSE) {
+      $matches[$prefix . 'Anonymous'] = 'Anonymous';
+    }
+    $result = db_query_range("SELECT lastname FROM {ori_user} WHERE LOWER(lastname) LIKE LOWER('%s%%')", $last_string, 0, 10);
+
+    while ($account = db_fetch_object($result)) {
+      $n = $account->lastname;
+      // Commas and quotes in terms are special cases, so encode 'em.
+      if (strpos($account->lastname, ',') !== FALSE || strpos($account->lastname, '"') !== FALSE) {
+        $n = '"' . str_replace('"', '""', $account->lastname) . '"';
+      }
+      $matches[$prefix . $n] = check_plain($account->lastname);
+    }
+  }
+
+  drupal_json($matches);
+}
+

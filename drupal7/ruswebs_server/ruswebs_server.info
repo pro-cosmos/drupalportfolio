@@ -1,0 +1,5 @@
+name = Ruswebs server
+description = Модуль Ruswebs cthdth XMLRPC
+package = Ruswebs
+core = 7.x
+version = "7.x-1.0"

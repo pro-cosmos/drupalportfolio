@@ -1,0 +1,37 @@
+<?php
+
+
+define('RUSWEBS_SERVER_FEEDBACK_EMAIL','sboevkm@gmail.com');
+/**
+ *  Implements hook_xmlrpc()
+ */
+function ruswebs_server_xmlrpc() {
+  $methods[] = array(
+    'ruswebs_server.feedback',
+    '_ruswebs_server_feedback',
+    array(
+      'string', // The first value is the return type, an integer in this case.
+      'string'  // First operand
+    ),
+    t('Feedback callback handler.'),
+  );
+
+  return $methods;
+}
+
+function _ruswebs_server_feedback($request) {
+  $params = unserialize($request);
+
+  module_load_include('inc','ruswebs_server', 'includes/ruswebs_server.feedback');
+  switch ($params['send_method']) {
+    case 'tracker':
+      break;
+    case 'jabber':
+      break;
+    default:// 'email':
+      $result = ruswebs_server_mail_send($params);
+      break;
+  }
+
+  return serialize($result);
+}

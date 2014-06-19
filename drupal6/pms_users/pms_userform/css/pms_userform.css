@@ -1,0 +1,76 @@
+td table{
+    margin:  0;
+}
+table td
+{
+    padding: 2px;
+}
+td.row-label
+{
+    font-weight: bold;
+    vertical-align:top;
+}
+td.td-value
+{
+    width: 500px;
+}
+td div.form-item{
+    margin: 0 0 0 0;
+}
+table tbody {
+    border: none;
+}
+fieldset legend
+{
+    text-decoration: underline;
+}
+div.form-item label{
+    display: none;
+}
+input.error, textarea.error, select.error{
+    border:1px solid #C52020;
+    color: #494949;
+}
+.form-item input.error, .form-item textarea.error, .form-item select.error {
+    border: 1px solid red;
+}
+#edit-mprefix-wrapper, #edit-tccode-wrapper, #edit-mccode-wrapper{
+    display:inline;
+}
+
+
+
+
+
+.ui-autocomplete {
+    max-height: 100px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+    /* add padding to account for vertical scrollbar */
+    padding-right: 20px;
+}
+/* IE 6 doesn't support max-height
+ * we use height instead, but this forces the menu to always be this tall
+*/
+* html .ui-autocomplete {
+    height: 100px;
+}
+
+ul.ui-autocomplete li {background:none !important;}
+
+table.user-table {width:auto}
+table.user-table tr.hidden {display:none}
+table.user-table tr.show {display:block}
+
+table.user-table select {width:100px}
+.table_inner {background:#ccc}
+
+
+
+/* additional styles    */
+.ajaxlink {border-bottom:1px dashed #296385;color:#296385;cursor: pointer; margin:2px 5px}
+#edit-psid-edit-wrapper {display:none;clear:both}
+select#edit-state {width:auto !important;}
+
+#ui-datepicker-div {z-index:992 !important;}

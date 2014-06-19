@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * Implementation of hook_install()
+ */
+function ori_server_install() {
+
+   // make sure that our hooks run after views'
+  db_query("UPDATE {system} SET weight = 11 WHERE name = 'ori_server'");
+
+  //add translates
+  t("Registration available for people older then 14 years!");
+  t('Incorect birthday date format!');
+  t('User email exists already!');
+  t('User account exists already!');
+
+}
+
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function ori_server_uninstall() {
+  $prefix   = variable_get('constant_ori_server_prefix','');
+  $settings = variable_get($prefix.'_settings_list','');
+  if(!empty($settings))
+  {
+  foreach($settings as $name=>$attr)  {
+    if($name){
+        variable_del($prefix.'_'.$name);
+        drupal_set_message('delete variable: '.$name);
+        }
+     }
+  }
+}

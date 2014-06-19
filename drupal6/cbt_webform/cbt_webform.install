@@ -1,0 +1,730 @@
+<?php
+
+/**
+ * Implementation of hook_install()
+ */
+function cbt_webform_install() {
+   // make sure that our hooks run after taxonomy_defaults
+  db_query("UPDATE {system} SET weight = 9999 WHERE name = 'cbt_webform'");
+}
+
+
+/**
+ * Implementation of hook_update_N().
+ */
+function cbt_webform_update_6000() {
+ $ret = array();
+
+if (!module_exists('fusioncharts')){
+  drupal_set_message('Please install fusioncharts module before run update!', 'error');
+  $ret['#abort'] = array('success' => FALSE, 'query' => t('Please install fusioncharts module before run update!'));
+  return $ret;
+}
+
+variable_set('chart_caption_crop',90);
+variable_set('chart_labels_crop',15);
+variable_set('chart_hdiv_max_limit',9);
+
+
+//add chart template nodes
+drupal_load('module', 'node');
+module_load_include('inc', 'node', 'node.pages');
+
+//add select template
+$node = _cbt_webform_get_chart_select_node();
+node_object_prepare($node);
+node_save($node);
+variable_set('cbt_webform_chart_select_template_nid', $node->nid);
+
+//add grid template
+$node = _cbt_webform_get_chart_grid_node();
+node_object_prepare($node);
+node_save($node);
+variable_set('cbt_webform_chart_grid_template_nid', $node->nid);
+
+return $ret;
+}
+
+
+/**
+ * Return fusioncharts node object for select charts
+ * @return type
+ */
+function _cbt_webform_get_chart_select_node(){
+
+$node = array(
+   'uid' => '1',
+   'type' => 'fusioncharts',
+   'language' => '',
+   'title' => 'Webform chart template (Bar 2D)',
+   'chart_type' => 'Bar 2D',
+   'width' => '800',
+   'height' => '500',
+   'rows_more' => 'Add more rows',
+   'cols_more' => 'Add more columns',
+   'matrix' =>
+  array (
+    'matrix' =>
+    array (
+      0 =>
+      array (
+        0 => 'First',
+        1 => '1',
+      ),
+      1 =>
+      array (
+        0 => 'Second',
+        1 => '2',
+      ),
+      2 =>
+      array (
+        0 => 'Third',
+        1 => '3',
+      ),
+      3 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+      4 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+      5 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+      6 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+      7 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+      8 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+      9 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+      10 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+      11 =>
+      array (
+        0 => '',
+        1 => '',
+      ),
+    ),
+    'header' =>
+    array (
+      0 => '',
+      1 => 'Series',
+      2 => 'Value',
+    ),
+    'first_col' =>
+    array (
+      0 => 1,
+      1 => 2,
+      2 => 3,
+      3 => 4,
+      4 => 5,
+      5 => 6,
+      6 => 7,
+      7 => 8,
+      8 => 9,
+      9 => 10,
+      10 => 11,
+      11 => 12,
+    ),
+  ),
+   'fill_boxes' => 1,
+   'settings' =>
+  array (
+    'titles' =>
+    array (
+      'caption' => 'Caption',
+      'subCaption' => '',
+      'xAxisName' => '',
+      'yAxisName' => '',
+    ),
+    'background' =>
+    array (
+      'bgcolor' => '#f3f3f3',
+      'bgAlpha' => '70',
+      'bgSWF' => '',
+    ),
+    'canvas' =>
+    array (
+      'canvasBgColor' => '#f3fff3',
+      'bgAlpha' => '70',
+      'canvasBorderColor' => '#000000',
+      'canvasBorderThickness' => '1',
+    ),
+    'numericallimits' =>
+    array (
+      'yAxisMinValue' => '',
+      'yAxisMaxValue' => '',
+    ),
+    'genericproperties' =>
+    array (
+      'shownames' => 1,
+      'showValues' => 1,
+      'animation' => 1,
+      'showLimits' => 1,
+      'rotateNames' => 1,
+      'showBarShadow' => 1,
+    ),
+    'font' =>
+    array (
+      'baseFont' => 'Arial',
+      'baseFontSize' => '12',
+      'baseFontColor' => '#000000',
+      'outCnvBaseFont' => 'Arial',
+      'outCnvBaseFontSze' => '14',
+      'outCnvBaseFontColor' => '#000000',
+    ),
+    'HoverCaption' =>
+    array (
+      'showhovercap' => 1,
+      'hoverCapBgColor' => '#ffffff',
+      'hoverCapBorderColor' => '#000000',
+      'hoverCapSepChar' => '',
+    ),
+    'ChartMargins' =>
+    array (
+      'chartLeftMargin' => '',
+      'chartRightMargin' => '',
+      'chartTopMargin' => '',
+      'chartBottomMargin' => '',
+    ),
+    'zeroplane' =>
+    array (
+      'zeroPlaneThickness' => '',
+      'zeroPlaneColor' => '#000000',
+      'zeroPlaneAlpha' => '',
+    ),
+    'numberformating' =>
+    array (
+      'numberPrefix' => '',
+      'numberSuffix' => '',
+      'formatNumber' => 1,
+      'formatNumberScale' => 1,
+      'decimalSeparator' => '.',
+      'thousandSeparator' => ',',
+      'decimalPrecision' => '0',
+      'divLineDecimalPrecision' => '0',
+      'limitsDecimalPrecision' => '0',
+    ),
+    'divisionalH' =>
+    array (
+      'numdivlines' => '',
+      'divlinecolor' => '#eeeeee',
+      'divLineThickness' => '',
+      'divLineAlpha' => '',
+      'showDivLineValue' => 1,
+      'showAlternateHGridColor' => 0,
+      'alternateHGridColor' => '#000000',
+      'alternateHGridAlpha' => '',
+    ),
+    'divisionalV' =>
+    array (
+      'numVDivLines' => '',
+      'VDivlinecolor' => '#000000',
+      'VDivLineThickness' => '',
+      'VDivLineAlpha' => '',
+      'showAlternateVGridColor' => 0,
+      'alternateVGridColor' => '#000000',
+      'alternateVGridAlpha' => '',
+    ),
+  ),
+   'attributes' =>
+  array (
+    'Color' =>
+    array (
+      'color1' => '#AFD8F8',
+      'color2' => '#F6BD0F',
+      'color3' => '#8BBA00',
+      'color4' => '#FF8E46',
+      'color5' => '#008E8E',
+      'color6' => '#D64646',
+      'color7' => '#8E468E',
+      'color8' => '#588526',
+      'color9' => '#B3AA00',
+      'color10' => '#008ED6',
+      'color11' => '#9D080D',
+      'color12' => '#A186BE',
+    ),
+  ),
+   'revision' => 0,
+   'name' => 'cbtmaster',
+   'date' => '2013-04-29 13:27:06 +0200',
+   'status' => 0,
+   'promote' => 0,
+   'sticky' => 0,
+   'op' => 'Save',
+   'submit' => 'Save',
+   'preview' => 'Preview',
+   'delete' => 'Delete',
+   'preview_changes' => 'View changes',
+   'form_build_id' => 'form-a7bf245865173aeb87017f4410df4a1e',
+   'form_token' => 'ccebb86d713809406d3e99f49eeca6da',
+   'form_id' => 'fusioncharts_node_form',
+   'comment' => '0',
+   'menu' =>
+  array (
+    'mlid' => 0,
+    'module' => 'menu',
+    'hidden' => 0,
+    'has_children' => 0,
+    'customized' => 0,
+    'options' =>
+    array (
+    ),
+    'expanded' => 0,
+    'parent_depth_limit' => 8,
+    'link_title' => '',
+    'parent' => 'primary-links:0',
+    'weight' => '0',
+    'plid' => '0',
+    'menu_name' => 'primary-links',
+  ),
+   'unique_field_override' => '0',
+   'teaser' => '',
+   'format' => 0,
+   'validated' => true,
+   'is_new' => false,
+   'body' => '',
+   'timestamp' => 0,
+);
+
+return  (object) $node;
+}
+
+
+/**
+ * Return fusioncharts node object for grid charts
+ * @return type
+ */
+function _cbt_webform_get_chart_grid_node(){
+
+$node = array(
+   'uid' => '1',
+   'type' => 'fusioncharts',
+   'title' => 'Webform chart template (Multi-series Bar 2D)',
+   'chart_type' => 'Multi-series Bar 2D',
+   'width' => '800',
+   'height' => '500',
+   'rows_more' => 'Add more rows',
+   'cols_more' => 'Add more columns',
+   'matrix' =>
+  array (
+    'matrix' =>
+    array (
+      0 =>
+      array (
+        0 => '',
+        1 => 'First',
+        2 => 'Second',
+        3 => 'Third',
+      ),
+      1 =>
+      array (
+        0 => 'a',
+        1 => '1',
+        2 => '2',
+        3 => '3',
+      ),
+      2 =>
+      array (
+        0 => 'b',
+        1 => '2',
+        2 => '4',
+        3 => '6',
+      ),
+      3 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      4 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      5 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      6 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      7 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      8 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      9 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      10 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      11 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      12 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      13 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      14 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      15 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      16 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      17 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      18 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      19 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      20 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      21 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      22 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      23 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+      24 =>
+      array (
+        0 => '',
+        1 => '',
+        2 => '',
+        3 => '',
+      ),
+    ),
+    'header' =>
+    array (
+      0 => '',
+      1 => 'Series',
+      2 => '',
+      3 => '',
+      4 => '',
+    ),
+    'first_col' =>
+    array (
+      0 => 'Label',
+      1 => 1,
+      2 => 2,
+      3 => 3,
+      4 => 4,
+      5 => 5,
+      6 => 6,
+      7 => 7,
+      8 => 8,
+      9 => 9,
+      10 => 10,
+      11 => 11,
+      12 => 12,
+      13 => 13,
+      14 => 14,
+      15 => 15,
+      16 => 16,
+      17 => 17,
+      18 => 18,
+      19 => 19,
+      20 => 20,
+      21 => 21,
+      22 => 22,
+      23 => 23,
+      24 => 24,
+    ),
+  ),
+   'fill_boxes' => 1,
+   'settings' =>
+  array (
+    'titles' =>
+    array (
+      'caption' => 'Caption',
+      'subCaption' => '',
+      'xAxisName' => '',
+      'yAxisName' => '',
+    ),
+    'background' =>
+    array (
+      'bgcolor' => '#f3f3f3',
+      'bgAlpha' => '70',
+      'bgSWF' => '',
+    ),
+    'canvas' =>
+    array (
+      'canvasBgColor' => '#f3fff3',
+      'bgAlpha' => '70',
+      'canvasBorderColor' => '#000000',
+      'canvasBorderThickness' => '1',
+    ),
+    'numericallimits' =>
+    array (
+      'yAxisMinValue' => '',
+      'yAxisMaxValue' => '',
+    ),
+    'genericproperties' =>
+    array (
+      'shownames' => 1,
+      'showValues' => 1,
+      'animation' => 1,
+      'showLimits' => 1,
+      'rotateNames' => 1,
+      'showBarShadow' => 1,
+      'showLegend' => 1,
+    ),
+    'font' =>
+    array (
+      'baseFont' => 'Arial',
+      'baseFontSize' => '12',
+      'baseFontColor' => '#000000',
+      'outCnvBaseFont' => 'Arial',
+      'outCnvBaseFontSze' => '14',
+      'outCnvBaseFontColor' => '#000000',
+    ),
+    'HoverCaption' =>
+    array (
+      'showhovercap' => 1,
+      'hoverCapBgColor' => '#ffffff',
+      'hoverCapBorderColor' => '#000000',
+      'hoverCapSepChar' => '',
+    ),
+    'ChartMargins' =>
+    array (
+      'chartLeftMargin' => '10',
+      'chartRightMargin' => '10',
+      'chartTopMargin' => '10',
+      'chartBottomMargin' => '10',
+    ),
+    'zeroplane' =>
+    array (
+      'zeroPlaneThickness' => '',
+      'zeroPlaneColor' => '#000000',
+      'zeroPlaneAlpha' => '',
+    ),
+    'numberformating' =>
+    array (
+      'numberPrefix' => '',
+      'numberSuffix' => '',
+      'formatNumber' => 1,
+      'formatNumberScale' => 1,
+      'decimalSeparator' => '.',
+      'thousandSeparator' => ',',
+      'decimalPrecision' => '0',
+      'divLineDecimalPrecision' => '0',
+      'limitsDecimalPrecision' => '0',
+    ),
+    'divisionalH' =>
+    array (
+      'numdivlines' => '',
+      'divlinecolor' => '#eeeeee',
+      'divLineThickness' => '',
+      'divLineAlpha' => '',
+      'showDivLineValue' => 1,
+      'showAlternateHGridColor' => 0,
+      'alternateHGridColor' => '#000000',
+      'alternateHGridAlpha' => '',
+    ),
+    'divisionalV' =>
+    array (
+      'numVDivLines' => '',
+      'VDivlinecolor' => '#eeeeee',
+      'VDivLineThickness' => '',
+      'VDivLineAlpha' => '',
+      'showAlternateVGridColor' => 0,
+      'alternateVGridColor' => '#eeeeee',
+      'alternateVGridAlpha' => '',
+    ),
+  ),
+   'attributes' =>
+  array (
+    'Color' =>
+    array (
+      'color1' => '#AFD8F8',
+      'color2' => '#F6BD0F',
+      'color3' => '#8BBA00',
+      'color4' => '#FF8E46',
+      'color5' => '#008E8E',
+      'color6' => '#D64646',
+      'color7' => '#8E468E',
+      'color8' => '#588526',
+      'color9' => '#B3AA00',
+      'color10' => '#008ED6',
+      'color11' => '#9D080D',
+      'color12' => '#A186BE',
+    ),
+  ),
+   'revision' => 0,
+   'name' => 'cbtmaster',
+   'date' => '2013-04-30 13:12:23 +0200',
+   'status' => 0,
+   'promote' => 0,
+   'sticky' => 0,
+   'op' => 'Save',
+   'submit' => 'Save',
+   'preview' => 'Preview',
+   'delete' => 'Delete',
+   'preview_changes' => 'View changes',
+   'form_build_id' => 'form-f212b19f10ed7ee18f0a0c4b57b0b43f',
+   'form_token' => 'ccebb86d713809406d3e99f49eeca6da',
+   'form_id' => 'fusioncharts_node_form',
+   'comment' => '0',
+   'menu' =>
+  array (
+    'mlid' => 0,
+    'module' => 'menu',
+    'hidden' => 0,
+    'has_children' => 0,
+    'customized' => 0,
+    'options' =>
+    array (
+    ),
+    'expanded' => 0,
+    'parent_depth_limit' => 8,
+    'link_title' => '',
+    'parent' => 'primary-links:0',
+    'weight' => '0',
+    'plid' => '0',
+    'menu_name' => 'primary-links',
+  ),
+   'unique_field_override' => '0',
+   'teaser' => '',
+   'format' => 0,
+   'validated' => true,
+   'is_new' => false,
+   'body' => '',
+   'timestamp' => 1367937990,
+);
+
+return (object) $node;
+}
+
+
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function cbt_webform_uninstall() {
+
+ variable_del('chart_caption_crop');
+ variable_del('chart_labels_crop');
+ variable_del('chart_hdiv_max_limit');
+
+ if (0 < $nid = variable_get('cbt_webform_chart_select_template_nid', 0)){
+   node_delete($nid);
+ }
+ if (0 < $nid = variable_get('cbt_webform_chart_grid_template_nid', 0)){
+   node_delete($nid);
+ }
+
+}

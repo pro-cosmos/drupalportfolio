@@ -1,0 +1,9 @@
+td div.form-item{
+  margin: 0 0 0 0;
+}
+td.row-label{
+	font-weight: bold;
+}
+table tbody {
+	border: none;
+}

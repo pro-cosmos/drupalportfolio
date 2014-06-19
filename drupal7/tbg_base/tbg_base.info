@@ -1,0 +1,5 @@
+name = TBG Base
+description = Реализует установку модулей и features, содержит базовые функции
+package = "TBG"
+core = 7.x
+version = "7.x-1.0"

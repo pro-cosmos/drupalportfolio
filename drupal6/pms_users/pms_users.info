@@ -1,0 +1,8 @@
+name = Oriflame PMS users
+description = Oriflame PMS users
+core = 6.x
+project = "pms_users"
+version = "6.x-1.0-dev"
+package = "Oriflame"
+files[] = pms_users.class.inc
+dependencies[] = ori_server

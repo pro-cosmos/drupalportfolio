@@ -1,0 +1,475 @@
+# $Id$
+#
+# Russian translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  subscription.admin.inc: n/a
+#  subscription.sub.inc: n/a
+#  subscription.catalog.inc: n/a
+#  subscription.template.inc: n/a
+#  subscription.tooltips.inc: n/a
+#  subscription.gaction.inc: n/a
+#  subscription.hooks.inc: n/a
+#  subscription.module: n/a
+#  views/subscription.views.inc: n/a
+#  subscription.options.inc: n/a
+#  subscription.statistics.inc: n/a
+#  inc/subscription_users/subscription.users.inc: n/a
+#  inc/subscription_mail/subscription.mail.inc: n/a
+#  subscription.info: n/a
+#  subscription_feature/subscription_feature.info: n/a
+#  templates/views-view-table--user-subscription-request--page.tpl.php: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2012-10-16 07:01+0400\n"
+"PO-Revision-Date: 2012-10-16 07:01+0400\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Russian <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=((((n%10)==1)&&((n%100)!=11))?(0):(((((n%10)>=2)&&((n%10)<=4))&&(((n%100)<10)||((n%100)>=20)))?(1):2));\n"
+
+#: subscription.admin.inc:10
+msgid "Add new variable"
+msgstr ""
+
+#: subscription.admin.inc:12
+msgid "Enter machine name of variable"
+msgstr ""
+
+#: subscription.admin.inc:18
+msgid "Add"
+msgstr ""
+
+#: subscription.admin.inc:54 subscription.sub.inc:8;22
+msgid "Delete"
+msgstr ""
+
+#: subscription.catalog.inc:288
+msgid "Добавить страну"
+msgstr ""
+
+#: subscription.catalog.inc:297;353;409 subscription.sub.inc:99 subscription.template.inc:83 subscription.tooltips.inc:117
+msgid "Сохранить изменения"
+msgstr ""
+
+#: subscription.catalog.inc:344;400
+msgid "Добавить область"
+msgstr ""
+
+#: subscription.gaction.inc:101
+msgid "Send selected mails to recipients"
+msgstr ""
+
+#: subscription.gaction.inc:106;107;132
+msgid "Activate mails"
+msgstr ""
+
+#: subscription.gaction.inc:112;113;130
+msgid "Disable mails"
+msgstr ""
+
+#: subscription.hooks.inc:66 subscription.module:185;202;224;130 views/subscription.views.inc:88
+msgid "Subscription"
+msgstr ""
+
+#: subscription.hooks.inc:66
+msgid "There are @count subscribe request"
+msgstr ""
+
+#: subscription.hooks.inc:71
+msgid "Subscription mail"
+msgstr ""
+
+#: subscription.options.inc:43
+msgid "Subscription settings"
+msgstr ""
+
+#: subscription.options.inc:49;101 subscription.module:240
+msgid "Settings"
+msgstr ""
+
+#: subscription.options.inc:195
+msgid "Сохранить значения"
+msgstr ""
+
+#: subscription.statistics.inc:14;56 inc/subscription_users/subscription.users.inc:124;518
+msgid "ФИО"
+msgstr ""
+
+#: subscription.statistics.inc:15;57 inc/subscription_users/subscription.users.inc:128;519
+msgid "Email"
+msgstr ""
+
+#: subscription.statistics.inc:16
+msgid "Дата отключения"
+msgstr ""
+
+#: subscription.statistics.inc:58
+msgid "Дата подключения"
+msgstr ""
+
+#: subscription.sub.inc:5 subscription.tooltips.inc:29
+msgid "Название"
+msgstr ""
+
+#: subscription.sub.inc:6
+msgid "Сокращение"
+msgstr ""
+
+#: subscription.sub.inc:7
+msgid "Только новые"
+msgstr ""
+
+#: subscription.template.inc:5;53
+msgid "Заготовка"
+msgstr ""
+
+#: subscription.template.inc:6 subscription.tooltips.inc:30;80
+msgid "Текст"
+msgstr ""
+
+#: subscription.template.inc:7 subscription.tooltips.inc:31 inc/subscription_mail/subscription.mail.inc:5 inc/subscription_users/subscription.users.inc:132;521;555;649
+msgid "Опции"
+msgstr ""
+
+#: subscription.template.inc:24 subscription.tooltips.inc:44
+msgid "Редактировать"
+msgstr ""
+
+#: subscription.template.inc:25 subscription.tooltips.inc:45 inc/subscription_mail/subscription.mail.inc:16
+msgid "Удалить"
+msgstr ""
+
+#: subscription.template.inc:25
+msgid "Вы действительно хотите удалить эту заготовку?"
+msgstr ""
+
+#: subscription.template.inc:48
+msgid "Добавление заготовки"
+msgstr ""
+
+#: subscription.template.inc:72
+msgid "Добавить заготовку"
+msgstr ""
+
+#: subscription.template.inc:95
+msgid "Шаблон с таким кодом уже существует."
+msgstr ""
+
+#: subscription.tooltips.inc:45
+msgid "Вы действительно хотите удалить эту подсказку?"
+msgstr ""
+
+#: subscription.tooltips.inc:104
+msgid "Добавить подсказку"
+msgstr ""
+
+#: subscription.module:167
+msgid "Subscription variables settings"
+msgstr ""
+
+#: subscription.module:220;329
+msgid "Mails"
+msgstr "Письма"
+
+#: subscription.module:228;674
+msgid "User subscriptions"
+msgstr ""
+
+#: subscription.module:232
+msgid "Template"
+msgstr ""
+
+#: subscription.module:236
+msgid "Tooltips"
+msgstr ""
+
+#: subscription.module:560;568
+msgid "Subscriptions list"
+msgstr ""
+
+#: subscription.module:577
+msgid "Add subscription"
+msgstr ""
+
+#: subscription.module:588
+msgid "Edit subscription"
+msgstr ""
+
+#: subscription.module:663
+msgid "User messages"
+msgstr ""
+
+#: subscription.module:1074
+msgid "send_ready_mail3"
+msgstr ""
+
+#: subscription.module:1074
+msgid "account->mail_status"
+msgstr ""
+
+#: subscription.module:90
+msgid "administer mail and subscription"
+msgstr ""
+
+#: subscription.module:91
+msgid "view ori subscription pages"
+msgstr ""
+
+#: subscription.module:92
+msgid "execute mailsid_send"
+msgstr ""
+
+#: subscription.module:93
+msgid "execute mail_status_enable"
+msgstr ""
+
+#: subscription.module:94
+msgid "execute mail_status_disable"
+msgstr ""
+
+#: subscription.info:0
+msgid "Mail and Subscription"
+msgstr ""
+
+#: subscription.info:0
+msgid "Manages mails and subscriptions"
+msgstr ""
+
+#: subscription.info:0 subscription_feature/subscription_feature.info:0
+msgid "Oriflame"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:4
+msgid "Файл"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:15
+msgid "Загрузить"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:16
+msgid "Вы действительно хотите удалить этот файл?"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:101
+msgid "Tokens"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:121
+msgid "Subscribtion name"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:122
+msgid "Subscribe link"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:123
+msgid "Unsubscribe link"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:189;446
+msgid "All"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:255
+msgid "Поле Задержка должно быть целым цислом."
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:258
+msgid "Поле Задержка должно быть больше или равно 0."
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:283
+msgid "Письмо добавлено."
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:288
+msgid "Изменения сохранены."
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:442
+msgid "items selected"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:491
+msgid "Group operations"
+msgstr "Групповые операции"
+
+#: inc/subscription_mail/subscription.mail.inc:497
+msgid "Save order"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:503
+msgid "Select mails recipients"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:512
+msgid "Select options"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:518
+msgid "Selected items"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:527
+msgid "Add selected"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:533
+msgid "Select All"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:539
+msgid "Reset"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:550
+msgid "Buttons"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:650
+msgid "Actions"
+msgstr ""
+
+#: inc/subscription_mail/subscription.mail.inc:713
+msgid "Вы действительно хотите удалить это письмо?"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:126;554
+msgid "Статус"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:127
+msgid "Роль"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:131;520;647
+msgid "Рассылка"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:166
+msgid "[Удалить]"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:166
+msgid "Вы действительно хотите удалить этого пользователя?"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:201
+msgid "Any"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:535;665
+msgid "[Активировать]"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:536
+msgid "[Отказать]"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:552
+msgid "Письмо"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:553
+msgid "Дата"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:581
+msgid "[Отправить ещё раз]"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:648
+msgid "Состояние"
+msgstr ""
+
+#: inc/subscription_users/subscription.users.inc:668
+msgid "[Деактивировать]"
+msgstr ""
+
+#: subscription_feature/subscription_feature.info:0
+msgid "Subscription feature"
+msgstr ""
+
+#: subscription_feature/subscription_feature.info:0
+msgid "Subscription settings feature"
+msgstr ""
+
+#: templates/views-view-table--user-subscription-request--page.tpl.php:3
+msgid "Found rows @count"
+msgstr ""
+
+#: views/subscription.views.inc:46
+msgid "Subscription:Catalog"
+msgstr ""
+
+#: views/subscription.views.inc:49
+msgid "Catalog id"
+msgstr ""
+
+#: views/subscription.views.inc:50
+msgid "Catalog ID"
+msgstr ""
+
+#: views/subscription.views.inc:59;60
+msgid "Catalog Type"
+msgstr ""
+
+#: views/subscription.views.inc:69;70
+msgid "Catalog Value"
+msgstr ""
+
+#: views/subscription.views.inc:91
+msgid "id"
+msgstr ""
+
+#: views/subscription.views.inc:92;146
+msgid "Subscription ID"
+msgstr ""
+
+#: views/subscription.views.inc:101;102
+msgid "Subscription title"
+msgstr ""
+
+#: views/subscription.views.inc:118
+msgid "Substatus"
+msgstr ""
+
+#: views/subscription.views.inc:135
+msgid "uid"
+msgstr ""
+
+#: views/subscription.views.inc:136
+msgid "Subscriber uid"
+msgstr ""
+
+#: views/subscription.views.inc:145
+msgid "sid"
+msgstr ""
+
+#: views/subscription.views.inc:154;155;156
+msgid "Subscription relationship"
+msgstr ""
+
+#: views/subscription.views.inc:165
+msgid "stid"
+msgstr ""
+
+#: views/subscription.views.inc:166
+msgid "Subscription status"
+msgstr ""
+
+#: views/subscription.views.inc:174;175;176
+msgid "Substatus-Catalog relationship"
+msgstr ""
+
+#: views/subscription.views.inc:201;202;203
+msgid "Substatus relationship"
+msgstr ""
+

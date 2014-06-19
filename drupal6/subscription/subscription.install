@@ -1,0 +1,1014 @@
+<?php
+
+/**
+ * Implementation of hook_schema().
+ */
+function subscription_schema() {
+  $schema['subscription'] = array(
+    'description' => 'Stores subscriptions',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Primary key for topic'
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Title of topic'
+      ),
+      'shortname' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'description' => 'Short name of topic'
+      ),
+      'onlynew' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+        'description' => 'Will new users receive mails, that are already in subscription'
+      ),
+      'smsg' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Subscribe link text'
+      ),
+      'umsg' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Unsubscribe link text'
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['substatus'] = array(
+    'description' => 'User subscription status matrix',
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'User id'
+      ),
+      'sid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Subscription id'
+      ),
+      'stid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Status id'
+      ),
+      'atime' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Date when subscription was activated'
+      )
+    ),
+    'primary key' => array('uid, sid'),
+  );
+
+  $schema['template'] = array(
+    'description' => 'Template system for mails',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'tid' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'unique' => TRUE,
+        'description' => 'Template id that will be used in mails for replace'
+      ),
+      'value' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'description' => 'Template value, that will be inserted in place of tid'
+      )
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['mailfiltervalue'] = array(
+    'description' => 'Mail-filter-value matrix',
+    'fields' => array(
+      'filter' => array(
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => TRUE,
+        'description' => 'Filter id'
+      ),
+      'mid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Mail id'
+      ),
+      'value' => array(
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+        'description' => 'Filter value for current mail'
+      )
+    ),
+    'primary key' => array('filter', 'mid'),
+  );
+
+  $schema['mail'] = array(
+    'description' => 'Mail object',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Mail id'
+      ),
+      'subject' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Mail theme'
+      ),
+      'mtext' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'description' => 'Mail text'
+      ),
+      'attachments' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'Uri to attachments'
+      ),
+      'delay' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Message delay'
+      ),
+      'created' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Timestamp for message when it was created'
+      ),
+      'stype' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Sending mail type id'
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Message weight'
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['mailsubscription'] = array(
+    'description' => 'Mail - subscription',
+    'fields' => array(
+      'mid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Mail id'
+      ),
+      'sid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Subscription id'
+      )
+    ),
+    'primary key' => array('mid'),
+  );
+
+  $schema['mailevent'] = array(
+    'description' => 'Mail - event',
+    'fields' => array(
+      'mid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Mail id'
+      ),
+      'eid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Event id'
+      )
+    ),
+    'primary key' => array('mid'),
+  );
+
+  $schema['usermail'] = array(
+    'description' => 'User - mail',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Link id'
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'User id'
+      ),
+      'mid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Mail id'
+      ),
+      'senddate' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Date of sending'
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Status: 0/1 - notsended/sended'
+      )
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'ixum_mid' => array('uid','mid','senddate','status')
+    )
+  );
+
+  $schema['ori_subscription_user'] = subscription_generate_user_schema();
+
+  $schema['catalog'] = array(
+    'description' => 'Event type',
+    'fields' => array(
+      'id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Id'
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'description' => 'Catalog name'
+      ),
+      'value' => array(
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'description' => 'Catalog element value'
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Order number'
+      ),
+    ),
+    'primary key' => array('id, type'),
+  );
+
+  $schema['mailfile'] = array(
+    'description' => 'Mail-file',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'file id'
+      ),
+      'mid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Mail id'
+      ),
+      'filemime' => array(
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'filename' => array(
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'filepath' => array(
+        'type' => 'varchar',
+        'length' => 350,
+        'not null' => TRUE,
+      )
+    ),
+    'primary key' => array('id')
+  );
+
+  $schema['tooltip'] = array(
+    'description' => 'Tooltips for site',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 70,
+        'not null' => TRUE,
+        'description' => 'Title of element to add tooltip'
+      ),
+      'text' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+        'description' => 'Tooltip text'
+      ),
+      'selector' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Selector of element to add tooltip'
+      ),
+      'mode' => array(
+        'type' => 'varchar',
+        'length' => 15,
+        'not null' => TRUE,
+        'description' => 'Mode of adding toolpit',
+        'default' => 'append'
+      )
+    ),
+    'primary key' => array('id'),
+  );
+
+
+  $schema['country'] = country_table();
+  $schema['state'] = state_table();
+  $schema['town'] = town_table();
+
+  return $schema;
+}
+
+function country_table(){
+  return array(
+    'description' => 'Countries',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Id'
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'description' => 'Country title'
+      ),
+      'code' => array(
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'description' => 'Country phone code'
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Order number'
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+}
+
+function state_table(){
+  return array(
+    'description' => 'States',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Id'
+      ),
+      'cid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Country Id'
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'description' => 'State title'
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+}
+
+function town_table(){
+  return array(
+    'description' => 'Towns',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Id'
+      ),
+      'sid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'State Id'
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+        'description' => 'Town title'
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+}
+
+
+function subscription_enable(){
+
+
+ if($GLOBALS['subscription_install']){
+
+    // Reset cached schema
+  drupal_get_schema(NULL, TRUE);
+
+  subscription_add_mailtypes();
+  subscription_add_substatus();
+  subscription_add_eventtypes();
+  subscription_add_purposes();
+  subscription_add_communities();
+  subscription_add_tooltips();
+
+
+  //insert subscription sql data
+  _subscription_add_data();
+
+  }
+
+}
+
+function subscription_add_mailtypes(){
+  $record = new stdClass();
+  $record->type = 'mail';
+  $record->id = 1;
+  $record->weight = 0;
+  $record->value = 'Вручную';
+  drupal_write_record('catalog', $record);
+  $record->id = 2;
+  $record->weight = 1;
+  $record->value = 'Рассылка';
+  drupal_write_record('catalog', $record);
+  $record->id = 3;
+  $record->weight = 2;
+  $record->value = 'Событие';
+  drupal_write_record('catalog', $record);
+}
+
+function subscription_add_substatus(){
+  $record = new stdClass();
+  $record->type = 'status';
+  $record->id = 1;
+  $record->weight = 0;
+  $record->value = 'Не активна';
+  drupal_write_record('catalog', $record);
+  $record->id = 2;
+  $record->weight = 1;
+  $record->value = 'Активна';
+  drupal_write_record('catalog', $record);
+  $record->id = 3;
+  $record->weight = 2;
+  $record->value = 'На подтверждении';
+  drupal_write_record('catalog', $record);
+}
+
+function subscription_add_eventtypes(){
+  $record = new stdClass();
+  $record->type = 'event';
+  $record->id = 1;
+  $record->weight = 0;
+  $record->value = 'Регистрация';
+  drupal_write_record('catalog', $record);
+
+  $record = new stdClass();
+  $record->type = 'event';
+  $record->id = 3;
+  $record->weight = 3;
+  $record->value = 'Подтверждение регистрации';
+  drupal_write_record('catalog', $record);
+
+  $record = new stdClass();
+  $record->id = 2;
+  $record->weight = 1;
+  $record->type = 'event';
+  $record->value = 'День рождения';
+  drupal_write_record('catalog', $record);
+
+  $record = new stdClass();
+  $record->id = 4;
+  $record->weight = 4;
+  $record->type = 'event';
+  $record->value = 'Запрос пароля';
+  drupal_write_record('catalog', $record);
+
+  $record = new stdClass();
+  $record->type = 'event';
+  $record->id = 5;
+  $record->weight = 5;
+  $record->value = 'Подтверждение регистрации (партнера)';
+  drupal_write_record('catalog', $record);
+
+  $record = new stdClass();
+  $record->type = 'event';
+  $record->id = 6;
+  $record->weight = 6;
+  $record->value = 'Отправка инструкции';
+  drupal_write_record('catalog', $record);
+
+  $record = new stdClass();
+  $record->id = 7;
+  $record->type = 'event';
+  $record->weight = 7;
+  $record->value = 'Подтверждение изменения email';
+  drupal_write_record('catalog', $record);
+}
+
+function subscription_add_purposes(){
+  $record = new stdClass();
+  $record->type = 'purpose';
+  $record->id = 1;
+  $record->weight = 0;
+  $record->value = 'Экономия';
+  drupal_write_record('catalog', $record);
+  $record->id = 2;
+  $record->weight = 1;
+  $record->value = 'Продажа';
+  drupal_write_record('catalog', $record);
+  $record->id = 3;
+  $record->weight = 2;
+  $record->value = 'Бизнес';
+  drupal_write_record('catalog', $record);
+  $record->id = 4;
+  $record->weight = 3;
+  $record->value = 'Другое';
+  drupal_write_record('catalog', $record);
+}
+
+function subscription_add_communities(){
+  $record = new stdClass();
+  $record->type = 'community';
+  $record->id = 1;
+  $record->weight = 0;
+  $record->value = 'Город';
+  drupal_write_record('catalog', $record);
+  $record->id = 2;
+  $record->weight = 1;
+  $record->value = 'Поселок';
+  drupal_write_record('catalog', $record);
+  $record->id = 3;
+  $record->weight = 2;
+  $record->value = 'Деревня';
+  drupal_write_record('catalog', $record);
+  $record->id = 4;
+  $record->weight = 3;
+  $record->value = 'Станица';
+  drupal_write_record('catalog', $record);
+  $record->id = 5;
+  $record->weight = 4;
+  $record->value = 'Село';
+  drupal_write_record('catalog', $record);
+}
+
+function subscription_install() {
+  drupal_install_schema('subscription');
+
+  $prefix = 'subscription';
+  variable_set('constant_subscription_prefix',$prefix);
+
+  //subs admin settings
+  if($settings){
+   $tmp = array();
+   foreach($settings as $name=>$val){
+      $v = ($val? $val:$name);
+
+      variable_set($prefix.'_'.$name, $v );
+      $tmp[$prefix.'_'.$name] = $prefix.'_'.$name;
+      drupal_set_message('install variable: '.$prefix.'_'.$name);
+   }
+   variable_set($prefix.'_settings_list',$tmp);
+   }
+
+
+
+
+  variable_set('subscribe_text', "Нажмите сюда, что бы подписаться на");
+  variable_set('unsubscribe_text', "Нажмите сюда, что бы отписаться от");
+  variable_set('subscription_userlist_page','admin/oriflame/pms_users');
+  variable_set('subscription_baseurl','admin/oriflame/subscription');
+
+  //TODO  - СДЕЛАТЬ ДИНАМИЧ ПОДГРУЗКУ
+  variable_set('subscription_register_event',1);
+  variable_set('subscription_birthday_event',2);
+  variable_set('subscription_confirm_event',3);
+  variable_set('subscription_sendpassword_event',4);
+  variable_set('subscription_confirmpartner_event',5);
+  variable_set('subscription_instructionsent_event',6);
+  variable_set('subscription_emailchangedconfirm_event',7);
+
+  variable_set('adminemail','mailer@oriflame-vip.ru');
+
+    //create dir for mails attachments
+    $dest = file_directory_path()."/mails";
+    if (!file_check_directory($dest,  FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS))
+        mkdir($dest);
+
+  db_query("UPDATE {system} SET weight = 13 WHERE name = 'subscription'");
+  $GLOBALS['subscription_install'] = true;
+}
+
+
+
+
+
+
+
+function subscription_add_tooltips(){
+$tooltips = array(
+  array(
+    'text' => "Общий текст ссылки на подписку для рассылки\n".
+              "Можно переопределить отдельно для каждой рассылки\n".
+              "В конец текста добавиться название рассылки",
+    'title' => 'Текст ссылки на подписку(общий)',
+    'selector' => '$("#edit-subscribe-text-wrapper label")'
+  ),
+  array(
+    'text' => "Общий текст ссылки на подписку на несколько рассылок\n".
+              "В конец текста добавиться список из названий рассылок",
+    'title' => 'Текст ссылки на подписку на несколько рассылок',
+    'selector' => '$("#edit-subscribe-to-all-wrapper label")'
+  ),
+  array(
+    'text' => "Общий текст ссылки на отписку от рассылки\n".
+              "Можно переопределить отдельно для каждой рассылки\n".
+              "В конец текста добавиться название рассылки",
+    'title' => 'Текст ссылки на подписки',
+    'selector' => '$("#edit-unsubscribe-text-wrapper label")'),
+  array(
+    'text' => "Название рассылки\n".
+              "Будет вставлено вместо {{сокращение}}",
+    'title' => 'Текст ссылки на отписку(общий)',
+    'selector' => '$("#edit-stitle-wrapper label")'
+  ),
+  array(
+    'text' => "'Только новые' - Пользователь не получит письма, которые были добавлены до его активации в рассылке",
+    'title' => "Поле 'Только новые' в рассылке",
+    'selector' => '$("#edit-additional-only-new-wrapper label")'
+  ),
+  array(
+    'text' => "Текст ссылки, сформированное вместо {{сокращение|п}}",
+    'title' => 'Текст ссылки на подписку',
+    'selector' => '$("#edit-smsg-wrapper label")'
+  ),
+  array(
+    'text' => "Текст ссылки, сформированное вместо {{сокращение|о}}",
+    'title' => 'Текст ссылки на отписку',
+    'selector' => '$("#edit-umsg-wrapper label")'
+  ),
+  array(
+    'text' => "Сокращенное название рассылки. Используется в письма так:\n" .
+              "{{сокращение}} - название рассылки\n" .
+              "{{сокращение|п}} - ссылка на подписку к рассылке\n" .
+              "{{сокращение|о}} - ссылка на отписку от рассылки\n",
+    'title' => 'Скоращенное название подписки',
+    'selector' => '$("#edit-shortname-wrapper label")'
+  ),
+  array(
+    'text' => "Название заготовки. Может быть использовано в письме как {{заготовка}}",
+    'title' => 'Название заготовки',
+    'selector' => '$("#edit-tid-wrapper label")'
+  ),
+  array(
+    'text' => "Текст заготовки. Будет вставлен вместо {{заготовка}}",
+    'title' => 'Текст заготовки',
+    'selector' => '$("#edit-ttext-wrapper label")'
+  ),
+  array(
+    'text' => "Заготовка - фраза или отформатированный текст, который будет вставлен в письмо ".
+              "вместо определенного вами набора символов",
+    'title' => "Раздел 'Заготовки для писем'",
+    'selector' => '$("h2:contains(\'Заготовки для писем\')")'
+  ),
+  array(
+    'text' => "Рассылка - набор писем(дополняемый), который рассылаются подписавшимся пользователям",
+    'title' => "Раздел 'Рассылки'",
+    'selector' => '$("h2:contains(\'Рассылки\')")'
+  ),
+  array(
+    'text' => "Перейти к отправке выбранных(галочкой) писем",
+    'title' => 'Отправление выбранных писем',
+    'selector' => '$("#send-selected-mail-button")',
+    'mode' => 'after'
+  ),
+  array(
+    'text' => "Сохранить порядок писем. Изменить порядок можно используя левую колонку - перетаскивать строчки, зажав левую клавишу мыши",
+    'title' => 'Сохранение порядка сортировки писем',
+    'selector' => '$("#change-mail-weight-button")',
+    'mode' => 'after'
+  ),
+  array(
+    'text' => "Тема письма",
+    'title' => 'Тема письма',
+    'selector' => '$("#edit-subject-wrapper label")'
+  ),
+  array(
+    'text' => "Текст письма\n".
+              "Можно использовать:\n".
+              "{{заготовка}} - заготовка для письма\n".
+              "{{фио}} - Фамилия Имя Отчество пользователя, которому отправляется письмо\n".
+              "{{фамилия}}, {{имя}}, {{отчество}} - фамилия, имя, отчество пользователя\n".
+              "{{письма|о}} - ссылка на отключение от писем с сайта\n".
+              "{{письма|п}} - ссылка на подключение к письмам с сайта\n".
+              "{{рассылка}} - сокращенное наименование рассылки, вставится полное название\n".
+              "{{рассылка|п}} - ссылка на подключение к рассылке\n".
+              "{{рассылка|о}} - ссылка на отписку от рассылки\n".
+              "{{|пв}} - ссылка на подписке к рассылкам, ссылки на подписку к которым есть в письме\n",
+    'title' => 'Текст письма',
+    'selector' => '$("#edit-mtext-wrapper")',
+    'mode' => 'prepend'
+  ),
+  array(
+    'text' => "Тип письма\n".
+    "Вручную - отправляется администратором, использую кнопку 'Отправить выбранные' в списке писем\n".
+    "Событие - письмо отправится, если произошло событие, например, день рождения пользователя или регистрация\n".
+    "Рассылка - письмо будет добавлено в рассылку и будет автоматически отправлено через заданное время(задержка) после подключения пользователем рассылки\n",
+    'title' => 'Тип письма',
+    'selector' => '$("#edit-type-wrapper label")'
+  ),
+  array(
+    'text' => "Задержка в днях перед отправлением письма, если тип событие(со дня события) или рассылка(со дня активации)",
+    'title' => 'Задержка отправления письма',
+    'selector' => '$("#edit-delay-wrapper label")'
+  ),
+  array(
+    'text' => "Фильтры получателей писем. Работают если тип: событие или рассылка",
+    'title' => 'Фильтры получателей письма',
+    'selector' => '$("fieldset legend a:contains(\'Фильтры получателей\')")'
+  ),
+  array(
+    'text' => "Фильтры получателей писем. Позволяют отобрать получателей по заданным параметрам",
+    'title' => 'Фильтры пользователей, которые выбраны для получения письма',
+    'selector' => '$("fieldset legend a:contains(\'Фильтры пользователей\')")'
+  ),
+  array(
+    'text' => "Добавить выбранных пользователей в список на отправку, если вы не хотите отправлять всем пользователя",
+    'title' => 'Добавление пользователя в выбранных на отправление',
+    'selector' => '$("#add-selected")'
+  ),
+  array(
+    'text' => "Отправить письмо(а) всем пользователям, если были применены фильтры, то всем отфильтрованным пользователям",
+    'title' => 'Отправление письмо всем пользователям',
+    'selector' => '$("#send-all-button")'
+  ),
+  array(
+    'text' => "Отправить письмо(а) выбранным пользователям(из списка для отправки)",
+    'title' => 'Отправление письма выбранным пользователям',
+    'selector' => '$("#send-selected-button")'
+  ),
+  array(
+    'text' => "Очистить список выбранных пользователей",
+    'title' => 'Очистка списка выбранных пользователей',
+    'selector' => '$("#clear-selected")'
+  ),
+  array(
+    'text' => "Тема письма при смене статуса рассылки на \"Отключена\"",
+    'title' => 'Тема письма при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-deactivate-subject-wrapper label")',
+  ),
+  array(
+    'text' => "Текст письма/страницы при смене статуса рассылки на \"Отключена\"\n".
+              "Можно использовать стандартные сокращения(как в письме)\n".
+              "Для вставки названия текущей(их) рассылки(ок) используйте {{рассылки}}",
+    'title' => 'Текст письма/страницы при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-deactivate-text-wrapper")',
+    'mode' => 'prepend'
+  ),
+  array(
+    'text' => "Тема письма при смене статуса рассылки на \"Активирована\"\n",
+    'title' => 'Тема письма при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-activate-subject-wrapper label")',
+  ),
+  array(
+    'text' => "Текст письма/страницы при смене статуса рассылки на \"Активирована\"\n".
+              "Можно использовать стандартные сокращения(как в письме)\n".
+              "Для вставки названия текущей(их) рассылки(ок) используйте {{рассылки}}",
+    'title' => 'Текст письма/страницы при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-activate-text-wrapper")',
+    'mode' => 'prepend'
+  ),
+  array(
+    'text' => "Тема письма при смене статуса рассылки на \"На подтверждении\"\n",
+    'title' => 'Тема письма при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-approve-subject-wrapper label")',
+  ),
+  array(
+    'text' => "Текст письма/страницы при смене статуса рассылки на \"На подтверждении\"\n".
+              "Можно использовать стандартные сокращения(как в письме)\n".
+              "Для вставки названия текущей(их) рассылки(ок) используйте {{рассылки}}",
+    'title' => 'Текст письма/страницы при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-approve-text-wrapper")',
+    'mode' => 'prepend'
+  ),
+  array(
+    'text' => "Тема письма при смене статуса рассылки на \"Отключена администратором\"\n",
+    'title' => 'Тема письма при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-deactivate-admin-subject-wrapper label")',
+  ),
+  array(
+    'text' => "Текст письма/страницы при смене статуса рассылки на \"Отключениа администратором\"\n".
+              "Можно использовать стандартные сокращения(как в письме)\n".
+              "Для вставки названия текущей(их) рассылки(ок) используйте {{рассылки}}",
+    'title' => 'Текст письма/страницы при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-deactivate-admin-text-wrapper")',
+    'mode' => 'prepend'
+  ),
+  array(
+    'text' => "Тема письма при смене статуса рассылки на \"Отказано в подключении\"\n",
+    'title' => 'Тема письма при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-declined-subject-wrapper label")',
+  ),
+  array(
+    'text' => "Текст письма/страницы при смене статуса рассылки на \"Отказано в подключении\"\n".
+              "Можно использовать стандартные сокращения(как в письме)\n".
+              "Для вставки названия текущей(их) рассылки(ок) используйте {{рассылки}}",
+    'title' => 'Текст письма/страницы при смене статуса рассылки',
+    'selector' => '$("#edit-subscription-declined-text-wrapper")',
+    'mode' => 'prepend'
+  ),
+  array(
+    'text' => "Email адрес с которого отправлено письмо.",
+    'title' => 'Email адрес отправителя',
+    'selector' => '$("#edit-mailer_from-wrapper label")'
+  ),
+  array(
+    'text' => "Текст ссылки на отключение от писем",
+    'title' => 'Текст ссылки на отключение от писем',
+    'selector' => '$("#edit-deactivate_mails-wrapper label")'
+  ),
+  array(
+    'text' => "Префикс сотового оператора. Например, если ваш номер мобильного ".
+              "+7 (903) 888 11 22, то префикс 903",
+    'title' => 'Префикс мобильного телефона',
+    'selector' => '$("#mprefix-help")'
+  ),
+  array(
+    'text' => "Номер мобильного после префикса. Как правило, этот номер состоит из 7 цифр. ".
+              "Если вы пользуетесь коротким номером, то необходимо указать номер в ".
+              "федеральном формате, предварительно заполнив поле \"Префикс\"",
+    'title' => 'Мобильный телефон',
+    'selector' => '$("#mnumber-help")'
+  ),
+);
+
+  foreach($tooltips as $tip){
+    $record = new stdClass();
+    $record->title = $tip['title'];
+    $record->text = $tip['text'];
+    $record->selector = $tip['selector'];
+    if (isset($tip['mode']) ){
+      $record->mode = $tip['mode'];
+    }
+    drupal_write_record('tooltip', $record);
+  }
+}
+
+
+/*
+ * TODO
+ * We need separate this table and make for this module
+ * table with fields like:
+ * uid
+ * mail_status
+ * mail_status_date
+ *
+ */
+function subscription_generate_user_schema() {
+  return array(
+    'description' => 'ori subscription user',
+    'fields' => array(
+      'id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'User id'
+      ),
+      'mail_status' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'default' => 1,
+        'description' => 'Mail status'
+      ),
+      'mail_status_date' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'description' => 'Mail status change date'
+      ),
+    ),
+       //'primary key' => array('pid'),
+      'unique keys' => array(
+      'ixu_id' => array('id'),
+    )
+  );
+}
+
+
+
+
+/**
+ * load data in table
+ */
+function _subscription_add_data() {
+  $path = drupal_get_path('module', 'subscription');
+
+  //subscription data install
+  if (db_table_exists('mail') && !db_result(db_query("select count(*) from {mail}"))) {
+    module_load_include('module', 'ori_base');
+    _ori_base_load_sql_dump($path.'/subscription.data.sql');
+    drupal_set_message('Subscription data installed!');
+  }
+}
+
+
+function subscription_uninstall() {
+  drupal_uninstall_schema('subscription');
+}
+
+function subscription_update_6000(){
+  $ret = array();
+  $ret[] = update_sql("CREATE TABLE IF NOT EXISTS {countrycode} (
+            `cid` int(10) unsigned NOT NULL,
+            `code` varchar(10) NOT NULL,
+            PRIMARY KEY (`cid`)
+          ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;"
+        );
+  $ret[] = update_sql("insert into {countrycode} (cid, code) values (1, '+7')");
+  $ret[] = update_sql("insert into {countrycode} (cid, code) values (2, '+380')");
+  $ret[] = update_sql("insert into {countrycode} (cid, code) values (3, '+7')");
+  return $ret;
+}
+
+
+/**
+ * add field indexes
+ */
+function subscription_update_6001() {
+  $ret = array();
+
+  $fields = array('mail_status','mail_status_date');
+    foreach($fields as $f){
+     db_add_index($ret, 'ori_subscription_user', 'ix_'.$f, array($f));
+  }
+
+  $fields = array('uid','status');
+    foreach($fields as $f){
+     db_add_index($ret, 'usermail', 'ix_'.$f, array($f));
+  }
+
+  $ret[] = array('success' => TRUE, 'query' => check_plain('add field indexes'));
+
+  return $ret;
+}

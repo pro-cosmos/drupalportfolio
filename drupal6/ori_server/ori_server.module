@@ -1,0 +1,470 @@
+<?php
+
+define('ORI_SERVER_TESTMODE', false);
+
+module_load_include('inc', 'pms_users', 'pms_users.class');
+
+include_once('ori_server.class.php');
+
+/**
+ * hook_init()
+ */
+function ori_server_init() {
+  $allowed = array('done', 'install-oriflame-l10n-install');
+  if (in_array(variable_get('install_task', ''), $allowed) && !variable_get('ori_server_after_install', false)) {
+    _ori_server_after_install();
+  }
+}
+
+function _ori_server_after_install() {
+  if (variable_get('ori_base_host_partneraccount', '') && variable_get('ori_base_host_regform', '')) {
+
+    $prefix = 'ori_server';
+    //install required variables
+    variable_set('constant_ori_server_prefix', $prefix);
+    variable_set('constant_ori_server_tooltip_groups', array('' => t('No'), 'important' => t('important block')));
+
+    $settings = array('partnerregform' => variable_get('ori_base_host_partneraccount', ''),
+      'regformsite' => variable_get('ori_base_host_regform', ''),
+    );
+    $tmp = array();
+    foreach ($settings as $name => $val) {
+      $v = ($val ? $val : $name);
+
+      variable_set($prefix . '_' . $name, $v);
+      $tmp[$prefix . '_' . $name] = $prefix . '_' . $name;
+    }
+    variable_set($prefix . '_settings_list', $tmp);
+    variable_set('ori_server_after_install', true);
+  }
+}
+
+/**
+ * Implementation of hook_menu()
+ */
+function ori_server_menu() {
+  $items = array();
+  $baseurl = 'admin/oriflame/ori_server';
+
+  //admin menu
+  $items[$baseurl] = array(
+    'title' => 'Oriflame server',
+    'description' => 'Oriflame server',
+    'position' => 'right',
+    'weight' => -4,
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items[$baseurl . '/settings'] = array(
+    'title' => t('Oriflame server settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ori_server_settings'),
+    'access arguments' => array('administer site configuration'),
+    // 'type' => 'MENU_DEFAULT_LOCAL_TASK',
+    'file' => 'ori_server.admin.inc'
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_xmlrpc().
+ *
+ * Provides Drupal with an array to map XML-RPC callbacks to the
+ * functions implemented by this module.
+ *
+ * @see hook_xmlrpc()
+ */
+function ori_server_xmlrpc() {
+  $methods[] = array(
+    'ori_server.version',
+    '_ori_server_version',
+    array('string'),
+    t('Return version.')
+  );
+
+  $methods[] = array(
+    'ori_server.auth',
+    '_ori_server_auth',
+    array('string', 'string'),
+    t('Return Authentification of partner site by secretcode.')
+  );
+
+  /***************************** */
+  /*     Regform handlers        */
+  $methods[] = array(
+    'ori_server.get_state',
+    '_ori_server_get_state',
+    array('string', 'string'),
+    t('Return get_state.')
+  );
+
+  $methods[] = array(
+    'ori_server.get_country',
+    '_ori_server_get_country',
+    array('string'),
+    t('Return get_country.')
+  );
+
+  $methods[] = array(
+    'ori_server.get_postindex',
+    '_ori_server_get_postindex',
+    array('string', 'string', 'string'),
+    t('Return get_postindex.')
+  );
+
+  $methods[] = array(
+    'ori_server.get_town',
+    '_ori_server_get_town',
+    array('string', 'string', 'string', 'string'),
+    t('Return get_town.')
+  );
+
+  $methods[] = array(
+    'ori_server.get_district',
+    '_ori_server_get_district',
+    array('string', 'string', 'string', 'string'),
+    t('Return get_district.')
+  );
+
+  $methods[] = array(
+    'ori_server.get_place',
+    '_ori_server_get_place',
+    array('string', 'string', 'string', 'string', 'string'),
+    t('Return get_place.')
+  );
+  /***************************** */
+  /*        User handlers        */
+  $methods[] = array(
+    'ori_server.user_load',
+    '_ori_server_user_load',
+    array('string', 'string', 'array'),
+    t('Return user_load.')
+  );
+
+  $methods[] = array(
+    'ori_server.user_registr_validate',
+    '_ori_server_user_registr_validate',
+    array('string', 'string'),
+    t('User registration validate.')
+  );
+
+  $methods[] = array(
+    'ori_server.user_registr',
+    '_ori_server_user_registr',
+    array('string', 'string'),
+    t('Return user_registr.')
+  );
+  $methods[] = array(
+    'ori_server.user_confirm',
+    '_ori_server_user_confirm',
+    array('string', 'string'),
+    t('Return user_confirm.')
+  );
+
+
+   $methods[] = array(
+    'ori_server.partner_site_load',
+    '_ori_server_partner_site_load',
+    array('string', 'string'),
+    t('Return partner site information.')
+  );
+
+  return $methods;
+}
+
+/**
+ * User registration validate
+ * @param type $args
+ * @return type
+ */
+function _ori_server_user_registr_validate($values) {
+  $out = true;
+  $errors = array();
+  $values = OriServer::unpack($values);
+
+  // Please enter valid email
+  if (!valid_email_address(trim($values['email']))) {
+    $errors[] = array('email' => t('Please enter valid email!'));
+  }
+
+  // User account exists already
+  $q = "select id from {ori_user} WHERE passportseries = '%s' and passportnumber = '%s' LIMIT 1";
+  if (db_result(db_query($q, trim($values['series']), trim($values['number']))))
+    $errors[] = t('User account exists already!');
+
+  // User email exists already!
+  $q = "select id from {ori_user} WHERE email = '%s' LIMIT 1";
+  if (db_result(db_query($q, trim($values['email']))))
+    $errors[] = array('email' => t('User email exists already!'));
+
+  // Incorect birthday date format
+  $birthday = explode('/', $values['birthday']);
+  if (!empty($birthday) && count($birthday) == 3) {
+    $end = $birthday[2] . '-' . $birthday[1] . '-' . $birthday[0] . ' 01:01:01';
+    $interval = date_diff(date_create(), date_create($end));
+    $diff_years = $interval->format("%y");
+    if ($diff_years < 14)
+      $errors[] = array('birthday' => t("Registration available for people older then 14 years!"));
+  }
+  else
+    $errors[] = array('birthday' => t('Incorect birthday date format!'));
+
+  if (!empty($errors)) {
+    $out = array('errors' => $errors);
+  }
+
+  return OriServer::pack($out);
+}
+
+/**
+ * Загружает пользователя
+ * TODO: надо бы авторизацию прикрутить все-таки!
+ */
+function _ori_server_user_load($mode, $args = array()) {
+  $out = false;
+  $where = '';
+  $join = '';
+  $additional_select = '';
+
+  switch ($mode) {
+    case 'passport':
+      $where = " ori_user.passportseries = '%s' and ori_user.passportnumber = '%s' ";
+      break;
+    case 'hash':
+      $where = " md5(ori_user.id) = '%s' ";
+      break;
+    case 'regnumber':
+      //$additional_select = ' ,site.domain_name'; 
+      // make sure user has Partner role here GitHub#238
+      $where = " ori_user.regnumber = '%s' AND users_roles.rid = " . PMS_USERS_PARTNER_ROLE . ' ';
+      $join = ' left join {users_roles} on users_roles.uid = ori_user.uid ';
+      //$join.= ' left join {ori_partner_site} site on ori_user.uid = site.uid ';
+      break;
+    case 'email':
+      $additional_select = ', sponsor.regnumber AS sponsor_regnumber';
+      $where = " ori_user.email = '%s' ";
+      $join = ' left join {ori_user} sponsor on sponsor.uid = ori_user.psid ';
+      break;
+  }
+
+  if ($where) {
+    $q = "select ori_user.* $additional_select from {ori_user} ori_user $join WHERE $where";
+    // add 1 param = query
+    $param[] = $q;
+    // add other params = args
+    $param = array_merge($param, $args);
+    //add limit params limit 1
+    $param[] = 0;
+    $param[] = 1;
+
+    $d = call_user_func_array('db_query_range', $param);
+
+    $out = db_fetch_array($d);
+  }
+
+  if (ORI_SERVER_TESTMODE)
+    watchdog('xmlrpc_user_load', json_encode($q));
+
+  return OriServer::pack($out);
+}
+
+/**
+ * проверка данных и регистрация пользователя
+ */
+function _ori_server_user_confirm($confirmCode) {
+  $out = false;
+  if (ORI_SERVER_TESTMODE)
+    watchdog('2_user_confirm', json_encode($confirmCode));
+
+  if ($confirmCode) {
+    $q = "select * from `{ori_user}` WHERE MD5(id) = '%s'  and `status` > 0 and `status`!= " . PMS_USERS_STATUS_DISABLED; //4- статус disabled
+    if ($account = db_fetch_array(db_query_range($q, $confirmCode, 0, 1))) {
+      $out['account'] = $account;
+      $out['result'] = true;
+
+      //check if pmsregform and change url
+      $pathurl = '/ori_partner/confirm_ok';
+      if ($account['regsource'] == variable_get('ori_server_partnerregform', '')) {
+        $pathurl = str_replace('//', '/', url($pathurl));
+      }
+      $out['confirm_page'] = 'http://' . $account['regsource'] . $pathurl . '/' . _ori_server_user_hash($account);
+      if (ORI_SERVER_TESTMODE)
+        watchdog('_user_confirm', json_encode($account));
+
+      module_invoke('subscription', 'ori_server_user_confirm', $account);
+    }
+  }
+
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @param type $account
+ * @return type
+ */
+function _ori_server_user_hash($account) {
+  $account = is_object($account) ? (array) $account : $account;
+  return md5($account['id']);
+}
+
+/**
+ * провера данных и регистрация пользователя
+ * @param type $values
+ * @return type
+ */
+function _ori_server_user_registr($values) {
+  $out = false;
+  module_load_include('inc', 'ori_server', 'inc/ori_server.user_register');
+  $values = OriServer::unpack($values);
+
+  if (ORI_SERVER_TESTMODE)
+    watchdog('post data', json_encode($values));
+
+  // определяем вид регистрации, по сайту с которого пришел клиент
+  $method = _ori_server_userregister_get_method($values);
+  if (ORI_SERVER_TESTMODE)
+    watchdog('method', $method);
+
+  // create ori account
+  $account = _ori_server_userregister_create_account($values, $method);
+  if ($account) {
+    // get custom response data
+    $out = _ori_server_userregister_response($account, $method, $values);
+    if (ORI_SERVER_TESTMODE)
+      watchdog('response out', json_encode($out));
+  }
+  else {
+    $out = array('error_message' => 'Error: cant create user account!');
+  }
+
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @return type
+ */
+function _ori_server_get_country() {
+  $out = Country::getList();
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @return type
+ */
+function _ori_server_auth($secretcode) {
+  $out = OriServer::Auth($secretcode);
+  watchdog('ori_server', 'XMLRPC server auth: secretcode: @secretode, result: @out', array('@secretode' => $secretcode, '@out' => $out), WATCHDOG_INFO);
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @return type
+ */
+function _ori_server_version() {
+  return OriServer::$version;
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @param type $country
+ * @return type
+ */
+function _ori_server_get_state($country) {
+  $out = State::init($country)->getList();
+
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @param type $country
+ * @param type $search
+ * @return type
+ */
+function _ori_server_get_postindex($country, $search) {
+  $out = OriGeo::init($country)->IndexAutocomplete($search);
+
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @param type $country
+ * @param type $search
+ * @param type $state
+ * @return type
+ */
+function _ori_server_get_town($country, $search, $state) {
+  $out = Town::init($country)->autocomplete($state, $search);
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @param type $country
+ * @param type $search
+ * @param type $state
+ * @return type
+ */
+function _ori_server_get_district($country, $search, $state) {
+  $out = OriGeo::init($country)->DistrictAutocomplete($state, $search);
+  return OriServer::pack($out);
+}
+
+/**
+ *
+ * @param type $country
+ * @param type $search
+ * @param type $state
+ * @param type $area
+ * @return type
+ */
+function _ori_server_get_place($country, $search, $state, $area) {
+  $out = OriGeo::init($country)->PlaceAutocomplete($state, $area, $search);
+  return OriServer::pack($out);
+}
+
+/**
+ * ??
+ * @param type $account
+ * @param type $values
+ */
+function ori_server_ori_server_userregister_alter(&$account, $values) {
+  switch ($values['method']) {
+    case 'partnersite': case 'partnerregform': case 'regform':
+      $account->regsource = $values['partner_site_name'];
+      $account->regnumber = $values['regnumber'];
+      $account->regsourceid = $values['partner_site_id'];
+      break;
+
+    case 'import':
+      $account->regsourceid = variable_get('ori_partner_site_regform_id', 5);
+      $account->regsource = variable_get('ori_server_regformsite', '');
+      $account->regnumber = $values['regnumber'];
+      break;
+  }
+}
+
+
+/**
+ * Загружает пользователя
+ * TODO: надо бы авторизацию прикрутить все-таки!
+ */
+function _ori_server_partner_site_load($domain) {
+
+  module_load_include('inc', 'ori_partner_site');
+  $out = _ori_partner_get_site_by_domain($domain);
+  if (ORI_SERVER_TESTMODE)
+    watchdog('xmlrpc_partner_load', json_encode($out));
+
+  return OriServer::pack($out);
+}

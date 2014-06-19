@@ -1,0 +1,132 @@
+<?php
+
+function ori_partner_init(){
+   //fix problem with no installed features
+    if(variable_get('ori_regform_step1', '') == 'step1'){
+      drupal_flush_all_caches();
+      variable_set('ori_regform_step1', 'step11');
+    }
+}
+
+
+function ori_partner_menu() {
+    $items = array();
+
+    //public menu
+    $urlbase = variable_get('ori_partner_baseurl','');
+
+    $items[$urlbase . '/register_ok/%'] = array(
+        'title' => 'Регистрация прошла успешно',
+        'page callback' => 'ori_partner_register_callback',
+        'page arguments' => array(2),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK
+    );
+
+    $items[$urlbase . '/confirm_ok/%'] = array(
+        'title' => 'Регистрация подтверждена',
+        'page callback' => 'ori_partner_confirm_callback',
+        'page arguments' => array(2),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK
+    );
+
+
+    $items['admin/settings/ori/ori_partner/settings'] = array(
+        'title' => t('Oriflame partner settings'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('ori_partner_settings'),
+        'access arguments' => array('administer ori_partner'),
+        'file' => 'ori_partner.admin.inc'
+    );
+
+
+
+        $items[$urlbase . '/confirm/%'] = array(
+        'title' => 'Регистрация подтверждена',
+        'page callback' => 'ori_partner_regform_confirm',
+        'page arguments' => array(2),
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK
+    );
+
+    return $items;
+}
+
+
+
+function ori_partner_perm() {
+    return array('administer ori_partner');
+}
+
+
+
+function ori_partner_regform_confirm($confirmCode){
+   //очищаем сессию рег данных пользователя
+
+   //подтверждение регистрации проверяем код в ссылке и время истечения давности ссылки
+   $rez = OriClient::init()->confirmUser($confirmCode);
+   if((bool)$rez['result'])
+      drupal_goto($rez['confirm_page']);
+   else
+      drupal_set_message(__FUNCTION__ .':error');
+
+
+}
+
+
+/**
+ *
+ * @param type $hash
+ * @return string
+ */
+function ori_partner_register_callback($hash){
+    // проверяем зарегистрирован ли пользователь и выводим сообщение о успешной регистрации
+    if(false!= $account = OriClient::loadUser((string)$hash))
+       {
+        $mess = variable_get('ori_partner_message_registrok','');
+
+        if($mess){
+           foreach($account as $key=>$value){
+             $mess = str_replace('{'.$key.'}', $value, $mess);
+           }
+        }
+
+       return $mess;
+       }
+       else
+         drupal_not_found();
+}
+
+/**
+ *
+ * @param type $confirmCode
+ * @return type
+ */
+function ori_partner_confirm_callback($confirmCode){
+
+    //подтверждение регистрации проверяем код в ссылке
+    if(false!= $account = OriClient::loadUser($confirmCode))
+      {
+        $mess = variable_get('ori_partner_message_confirmok','');
+
+        if($mess){
+           foreach($account as $key=>$value){
+             $mess = str_replace('{'.$key.'}', $value, $mess);
+           }
+        }
+
+       return $mess;
+      }
+     else
+         return variable_get('ori_partner_message_confirmerror','');
+
+}
+
+/**
+ * Implementation of hook regform_site_referer_alter
+ * @param type $site_referer
+ */
+function ori_partner_regform_site_referer_alter($site_referer) {
+  $site_referer = empty($site_referer)? $_SERVER['HTTP_HOST']: $site_referer;
+}

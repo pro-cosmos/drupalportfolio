@@ -1,0 +1,20 @@
+td.weight-holder{
+	width:20px;
+}
+
+span.weight-holder {
+	display:inline-block;
+	width:20px;
+	height:20px;
+	background: url("../img/draggable.png") no-repeat scroll 0 0 transparent;
+}
+
+
+#pagesize {font-size:10px !important; display:inline}
+#edit-pagesize-wrapper {display:inline}
+#pagesize * {font-size:10px !important;}
+
+
+table tr.trgreen td {background:#eaffea}
+table tr.trred td {background:#ffeaea}
+table tr.tryellow td {background:#ffffde}

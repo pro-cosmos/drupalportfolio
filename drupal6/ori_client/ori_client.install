@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * Implementation of hook_install()
+ */
+function ori_client_install() {
+
+  variable_set('constant_ori_client_secretcode', '5');
+  variable_set('constant_ori_client_xmlrpcserver', 'https://'.variable_get('ori_base_host_partneraccount','').'/partner/xmlrpc.php');
+
+   // make sure that our hooks run after views'
+  db_query("UPDATE {system} SET weight = 11 WHERE name = 'ori_client'");
+}
+
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function ori_client_uninstall() {
+
+  variable_del('constant_ori_client_xmlrpcserver');
+  variable_del('constant_ori_client_secretcode');
+}

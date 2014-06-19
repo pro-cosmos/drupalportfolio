@@ -1,0 +1,3 @@
+<?php
+
+include_once('ori_regform_feature.features.inc');

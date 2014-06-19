@@ -1,0 +1,38 @@
+td table{
+	margin:  0;
+}
+table td
+{
+	padding: 2px;
+}
+td.row-label
+{
+  font-weight: bold;
+}
+td.row-value
+{
+  width: 500px;
+}
+td div.form-item{
+  margin: 0 0 0 0;
+}
+table tbody {
+	border: none;
+}
+fieldset legend
+{
+  text-decoration: underline;
+}
+div.form-item label{
+	display: none;
+}
+input.error, textarea.error, select.error{
+  border:1px solid #C52020;
+  color: #494949;
+}
+.form-item input.error, .form-item textarea.error, .form-item select.error {
+    border: 1px solid red;
+}
+#edit-mprefix-wrapper, #edit-tccode-wrapper, #edit-mccode-wrapper{
+	display:inline;
+}

@@ -1,0 +1,9 @@
+name = Oriflame server API
+package = "Oriflame"
+description = Oriflame server API
+project = "ori_server"
+version = "6.x-1.0-dev"
+core = 6.x
+
+
+

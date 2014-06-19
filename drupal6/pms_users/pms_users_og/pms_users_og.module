@@ -1,0 +1,366 @@
+<?php
+
+define('PMS_USERS_OG_STATUS_1', 'open');
+define('PMS_USERS_OG_STATUS_0', 'closed');
+define('PMS_USERS_OG_AUTOREGSPONSOR', 1);
+define('PMS_USERS_OG_AUTOREGCONSULTANT', 2);
+define('PMS_USERS_OG_EXTPARTNER', 3);
+define('PMS_USERS_OG_ACCOUNT_VIEWPASS', 4);
+
+
+module_load_include('inc', 'pms_users_og', 'pms_users_og.gaction');
+
+/**
+ * Implementation of hook_menu
+ * @return type
+ */
+function pms_users_og_menu() {
+  $items = array();
+  $baseurl = variable_get('pms_users_og_baseurl', '');
+
+  $items[$baseurl] = array(
+    'title' => 'Ori groups',
+    'description' => 'List, edit, or add user groups.',
+    'page callback' => 'pms_users_og_admin_group_list',
+    'access arguments' => array('pms_users_og access'),
+    'type' => MENU_NORMAL_ITEM
+  );
+
+  $items[$baseurl . '/list'] = array(
+    'title' => 'Ori groups',
+    'description' => 'List, edit, or add user groups.',
+    'page callback' => 'pms_users_og_admin_group_list',
+    'access arguments' => array('pms_users_og access'),
+    'type' => MENU_DEFAULT_LOCAL_TASK
+  );
+
+  $items[$baseurl . '/new'] = array(
+    'title' => 'Add new group',
+    'description' => 'Add new group.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('pms_users_og_admin_group'),
+    'access arguments' => array('pms_users_og access'),
+    'type' => MENU_LOCAL_TASK
+  );
+
+  $items[$baseurl . '/group/%/edit'] = array(
+    'title' => 'Edit Ori group',
+    'description' => 'Edit Ori group.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('pms_users_og_admin_group', 4),
+    'access arguments' => array('pms_users_og access'),
+    'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm
+ */
+function pms_users_og_perm() {
+  return array(
+    'pms_users_og access'
+  );
+}
+
+/**
+ * Implementation of hook_pms_users_block_links().
+ */
+function pms_users_og_pms_users_block_links_alter($links) {
+
+  if (pms_users_admin_access(PMS_USERS_OPERATOR_ROLE)) {
+    $links[] = array('title' => t('Ori groups'), 'href' => variable_get('pms_users_og_baseurl', ''));
+  }
+}
+
+/**
+ *
+ */
+function pms_users_og_valid_sponsor() {
+  global $user;
+
+  if (pms_users_admin_access(PMS_USERS_OPERATOR_ROLE))
+    return true;
+
+  $account = User::get(array('uid' => $user->uid));
+  $accgroup = pms_users_og_user_groups($account->id);
+
+  $valid = pms_users_is_sponsor() && $accgroup && isset($accgroup[PMS_USERS_OG_AUTOREGSPONSOR]);
+
+  return $valid;
+}
+
+/**
+ *
+ * @param type $mode
+ * @return type
+ */
+function pms_users_og_groups_select() {
+  $out = array();
+  $sql = "select * from {ori_og_groups} ";
+  if (!pms_users_admin_access()) {
+    $sql.= ' where active = 1';
+  }
+
+  $q = db_query($sql);
+  while ($r = db_fetch_array($q)) {
+    $out[$r['rid']] = $r['name'];
+  }
+
+  return $out;
+}
+
+/**
+ *
+ * @param type $mode
+ * @return type
+ */
+function pms_users_og_groups_data($rid = 0) {
+  $out = array();
+  $sql = "select * from {ori_og_groups} ";
+  if ($rid) {
+    $sql.=' where rid = ' . (int) $rid;
+  }
+  $q = db_query($sql);
+  while ($r = db_fetch_array($q)) {
+    $out[] = $r;
+  }
+
+  return $out;
+}
+
+/**
+ *
+ */
+function pms_users_og_user_groups($uid) {
+  $out = array();
+  $sql = "select g.rid,g.name from {ori_og_groups2users} as g2u inner join {ori_og_groups} g on g2u.rid=g.rid where g2u.uid=%d";
+  $q = db_query($sql, $uid);
+  while ($r = db_fetch_array($q)) {
+    $out[$r['rid']] = $r;
+  }
+
+  return $out;
+}
+
+/**
+ *
+ * @param type $rid
+ * @param type $id
+ */
+function pms_users_og_member_add($rid, $id, $rootsponsor = false) {
+  global $user;
+
+  if (!$rootsponsor) {
+    $account = User::get(array('uid' => $user->uid));
+    $rootsponsor = $account->id;
+  }
+  @db_query("INSERT INTO {ori_og_groups2users} (uid,rid,rootsponsor) VALUES (%d,%d,%d)", $id, $rid, (int)$rootsponsor);
+}
+
+/**
+ *
+ * @param type $rid
+ * @param type $uid
+ */
+function pms_users_og_member_remove($rid, $uid) {
+  @db_query("DELETE FROM {ori_og_groups2users} WHERE uid = %d and rid = %d ", $uid, $rid);
+}
+
+/**
+ *
+ * @param type $obj
+ */
+function pms_users_og_group_insert($obj) {
+  @db_query("INSERT INTO {ori_og_groups} (rid, name) VALUES (%d,'%s')", $obj->rid, $obj->name);
+}
+
+/**
+ *
+ * @param type $rid
+ */
+function pms_users_og_group_delete($rid) {
+  db_query("DELETE FROM {ori_og_groups} WHERE rid = %d", $rid);
+}
+
+function pms_users_og_admin_group_list() {
+  $out = '<p>' . l(t('Create new'), variable_get('pms_users_og_baseurl', '') . '/new') . '</p><br />';
+  $out.= pms_users_og_group_table();
+  return $out;
+}
+
+/**
+ *
+ * @return type
+ */
+function pms_users_og_group_table() {
+
+  $header = array(
+    array('data' => t('#')),
+    array('data' => t('Group')),
+    array('data' => t('Status'))
+  );
+
+
+  $groups = pms_users_og_groups_data();
+
+  $i = 0;
+  foreach ($groups as $r) {
+    $i++;
+    $rows[] = array(
+      $i,
+      l(t($r['name']), variable_get('pms_users_og_baseurl', '') . "/group/" . $r['rid'] . "/edit"),
+      $r['active'] ? t(PMS_USERS_OG_STATUS_1) : t(PMS_USERS_OG_STATUS_0)
+    );
+  }
+
+  return theme('table', $header, $rows);
+}
+
+/**
+ * Add new group form
+ * @return string
+ */
+function pms_users_og_admin_group($form_state, $rid) {
+
+  $form['fset'] = array(
+    '#title' => t('Ori group'),
+    '#type' => 'fieldset',
+    '#collapsible' => 0,
+  );
+
+  if ($rid) {
+    // Display the edit role form.
+    $role = db_fetch_object(db_query('SELECT * FROM {ori_og_groups} WHERE rid = %d', $rid));
+    $form['fset']['name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Group name'),
+      '#default_value' => $role->name,
+      '#size' => 30,
+      '#required' => TRUE,
+      '#maxlength' => 64,
+    );
+    $form['fset']['active'] = array(
+      '#type' => 'checkbox',
+      '#title' => t(PMS_USERS_OG_STATUS_1) . ' (Group with status "' . t(PMS_USERS_OG_STATUS_0) . '" can see only root)',
+      '#default_value' => $role->active
+    );
+    $form['fset']['rid'] = array(
+      '#type' => 'value',
+      '#value' => $rid,
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+    );
+    $form['delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete'),
+    );
+  }
+  else {
+    $form['fset']['#title'] = t('Create new');
+
+    $form['fset']['name'] = array(
+      '#type' => 'textfield',
+      '#size' => 32,
+      '#maxlength' => 64,
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add'),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ *
+ * @param type $form
+ * @param type $form_state
+ */
+function pms_users_og_admin_group_submit($form, &$form_state) {
+  $val = $form_state['values'];
+  //delete
+  if ($form_state['clicked_button']['#value'] == t('Delete')) {
+    pms_users_og_group_delete($val['rid']);
+  }
+
+  //add new
+  if ($form_state['clicked_button']['#value'] == t('Add') && !$val['rid']) {
+    $ins = new stdClass();
+    $ins->rid = 0;
+    $ins->name = check_plain($val['name']);
+    $ins->active = 1;
+    drupal_write_record('ori_og_groups', $ins);
+  }
+  // update
+  if ($form_state['clicked_button']['#value'] == t('Save') && $val['rid']) {
+    $upd = new stdClass();
+    $upd->rid = (int) $val['rid'];
+    $upd->name = check_plain($val['name']);
+    $upd->active = (int) $val['active'];
+    drupal_write_record('ori_og_groups', $upd, 'rid');
+  }
+
+  drupal_goto(variable_get('pms_users_og_baseurl', ''));
+}
+
+/**
+ * Get user group members
+ * @global type $user
+ * @param type $uid
+ * @param type $mode
+ */
+function pms_users_og_user_groupmembers($groupid, $uid = 0) {
+  global $user;
+
+  if (!$uid) {
+    $account = User::get(array('uid' => $user->uid));
+    $uid = $account->id;
+  }
+
+  $res = db_query("select u.*
+          from {ori_user} u
+          inner join {ori_og_groups2users} as g2u
+          on u.id = g2u.uid
+          where
+          g2u.rid = %d and g2u.rootsponsor = %d
+          order by u.id ", $groupid, $uid);
+
+  while ($r = db_fetch_array($res)) {
+    $out[] = $r;
+  }
+
+  return $out;
+}
+
+
+
+/* custom hooks */
+/**
+ *
+ * @param type $account
+ */
+function pms_users_og_ori_deleteuser($account){
+  @db_query("delete from {groups2users} where uid=%d ",$account->id);
+}
+
+/**
+ * Check if user is member of group
+ * @param int $rid
+ * @param int $uid
+ * @global object $user
+ * @return int
+ */
+function pms_users_og_is_member($rid, $uid = 0) {
+  global $user;
+  if (!$uid) {
+    $account = User::get(array('uid'=>$user->uid));
+    $uid = $account->id;
+  }
+  $sql = "select rid from {ori_og_groups2users} where uid=%d AND rid = %d limit 1";
+  return db_result(db_query($sql, $uid, $rid));
+}

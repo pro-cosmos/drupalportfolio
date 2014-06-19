@@ -1,0 +1,47 @@
+<?php
+
+//common class module
+module_load_include('inc', 'pms_users', 'pms_users.class');
+
+function pms_userform_init() {
+  // todo : remve it
+  variable_set('pms_userform_baseurl', 'pms_userform');
+}
+
+function pms_userform_menu() {
+  $items = array();
+  //public menu
+  $urlbase = variable_get('pms_userform_baseurl', '');
+  // autocomplete
+  $items[$urlbase . '/ajax/%'] = array(
+    'page callback' => 'pms_userform_ajax_callback',
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'file' => 'pms_userform.regform.inc'
+  );
+
+
+  return $items;
+}
+
+function pms_userform_perm() {
+  return array('administer pms_userform');
+}
+
+function pms_userform_theme($existing) {
+
+  return array(
+    // Theme for radio group.
+    'radios_sex' => array(
+      'arguments' => array('element' => NULL),
+      'file' => 'pms_userform.theme.inc'
+    ),
+    // Theme for single radio.
+    'radio_sex' => array(
+      'arguments' => array('element' => NULL),
+      'file' => 'pms_userform.theme.inc'
+    )
+  );
+}
+

@@ -1,0 +1,6 @@
+name = Oriflame partner module
+package = "Oriflame"
+description = Oriflame partner module
+dependencies[] = ori_client
+version = 6.0
+core = 6.x
