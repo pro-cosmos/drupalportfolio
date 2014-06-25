@@ -1,0 +1,97 @@
+# $Id$
+#
+# Russian translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  sms_unisendresponder.module,v 1.2 2010/08/09 07:02:38 wiseman
+#  sms_unisendresponder.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-08-09 18:48+0400\n"
+"PO-Revision-Date: 2010-08-09 18:48+0400\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Russian <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=((((n%10)==1)&&((n%100)!=11))?(0):(((((n%10)>=2)&&((n%10)<=4))&&(((n%100)<10)||((n%100)>=20)))?(1):2));\n"
+
+#: sms_unisendresponder.module:69
+msgid "Account apikey"
+msgstr ""
+
+#: sms_unisendresponder.module:70
+msgid "Please enter your SMS UNISENDRESPONDER apikey."
+msgstr ""
+
+#: sms_unisendresponder.module:81
+msgid "Use SSL Encyption"
+msgstr ""
+
+#: sms_unisendresponder.module:82
+msgid "Drupal's built-in HTTP client only supports SSL on PHP 4.3 compiled with OpenSSL."
+msgstr ""
+
+#: sms_unisendresponder.module:87
+msgid "From"
+msgstr "От"
+
+#: sms_unisendresponder.module:88
+msgid "This string will be used as the source identifier on the receivers device. <br/>Please note, that this option is not available with all the service ids provided by SMS UNISENDRESPONDER. <p>For details have a look at the <a href=\"http://login.unisendresponder.ru/ru/help/api/sendSms\">SMS UnisendResponder API</a></p>"
+msgstr ""
+
+#: sms_unisendresponder.module:96
+msgid "Test number"
+msgstr ""
+
+#: sms_unisendresponder.module:97
+msgid "For test number phone"
+msgstr ""
+
+#: sms_unisendresponder.module:116
+msgid "The SMS gateway does not accept these account settings."
+msgstr ""
+
+#: sms_unisendresponder.module:117
+msgid "The following error occured: @error"
+msgstr ""
+
+#: sms_unisendresponder.module:120
+msgid "The SMS gateway configuration has been tested successfully: @data"
+msgstr ""
+
+#: sms_unisendresponder.module:179
+msgid "error code - @error"
+msgstr ""
+
+#: sms_unisendresponder.module:193
+msgid "SMS id = @sms_id, @checksms"
+msgstr ""
+
+#: sms_unisendresponder.module:188
+msgid "sms_unisend"
+msgstr ""
+
+#: sms_unisendresponder.module:188
+msgid "SMS_error: @error"
+msgstr ""
+
+#: sms_unisendresponder.module:34
+msgid "administer sms_unisendresponder"
+msgstr ""
+
+#: sms_unisendresponder.info:0
+msgid "SMS UNISENDRESPONDER"
+msgstr ""
+
+#: sms_unisendresponder.info:0
+msgid "sms_unisendresponder integration with http://unisendresponder.ru."
+msgstr ""
+
+#: sms_unisendresponder.info:0
+msgid "SMS Framework"
+msgstr ""
+

@@ -1,0 +1,10 @@
+; $Id.
+name = SMS UNISENDRESPONDER
+description = sms_unisendresponder integration with http://unisendresponder.ru.
+package = SMS Framework
+dependencies[] = sms
+core = 7.x
+; Information added by drupal.org packaging script on 2009-10-28
+version = "7.x-1.0"
+core = 7.x
+datestamp = "1256755560"

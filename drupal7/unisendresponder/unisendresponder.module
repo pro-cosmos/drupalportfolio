@@ -1,0 +1,749 @@
+<?php
+
+include_once ('unisender_api.php');
+
+
+// $Id: unisendresponder.module,v 1.2.2.1.2.3.2.8.2.36 2010/08/09 18:41:08 Wiseman Exp $
+// http://login.unisendresponder.ru/
+
+/**
+ * @file
+ * Unisendresponder module.
+ */
+define('UNISENDRESPONDER_SUBSCRIPTION_SUCCESS', t('Thank you, you have been successfully subscribed.'));
+define('UNISENDRESPONDER_SUBSCRIPTION_FAILURE', t('We were unable to subscribe you at this time. Please try again later.'));
+define('UNISENDRESPONDER_UNSUBSCRIPTION_SUCCESS', t('Thank you, you have been successfully unsubscribed.'));
+define('UNISENDRESPONDER_UNSUBSCRIPTION_FAILURE', t('We were unable to unsubscribe you at this time. Please try again later.'));
+define('UNISENDRESPONDER_LISTTYPE_REQUIRED', 'required');
+define('UNISENDRESPONDER_LISTTYPE_OPTIN', 'optin');
+define('UNISENDRESPONDER_LISTTYPE_OPTOUT', 'optout');
+
+//urls
+define('UNISENDRESPONDER_URL_SETTINGS', 'admin/settings/unisendresponder');
+define('UNISENDRESPONDER_URL_UNSUBSCRIBE', 'unisendresponder/unsubscribe');
+define('UNISENDRESPONDER_URL_RESET', 'unisendresponder/reset');
+
+/**
+ * Implementation of hook_menu.
+ */
+function unisendresponder_menu() {
+  $items = array();
+
+  $items['user/%user/unisendresponder'] = array(
+    'title' => 'Uniresponder',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('unisendresponder_subscribe_form', 1),
+    'access arguments' => array('access content'),
+    // 'access callback' => 'userpoints_access_my_points',
+    // 'access arguments' => array(1),
+    // 'file' => 'userpoints.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1
+  );
+
+  $items[UNISENDRESPONDER_URL_RESET] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('unisendresponder_reset'),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('administer site configuration'),
+  );
+  $items[UNISENDRESPONDER_URL_UNSUBSCRIBE] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('unisendresponder_unsubscribe_form'),
+    'title' => 'Newsletter Unsubscribe',
+    //'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+  $items[UNISENDRESPONDER_URL_UNSUBSCRIBE . '/success'] = array(
+    'page callback' => 'unisendresponder_unsubscribe_success',
+    'title' => 'Unsubscription Confirmed',
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+  $items[UNISENDRESPONDER_URL_UNSUBSCRIBE . '/failure'] = array(
+    'page callback' => 'unisendresponder_unsubscribe_failure',
+    'title' => 'Unsubscription Failed',
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+  $items[UNISENDRESPONDER_URL_SETTINGS] = array(
+    'title' => 'Unisendresponder',
+    'description' => 'Manage Unisendresponder Settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('unisendresponder_admin_settings'),
+    'access arguments' => array('administer unisendresponder'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_permission()
+ */
+function unisendresponder_permission() {
+  return array(
+    'administer unisendresponder' => array('title' => t('administer unisendresponder'))
+  );
+}
+
+/**
+ * Add unisendresponder form fields to account and registration forms
+ */
+function unisendresponder_profile_form(&$form) {
+  global $user;
+
+  $account = $user;
+  $q = getUnisenderObject();
+
+  if ($q) {
+    $list_form = array();
+
+    if (!$account->uid) {
+      // user registration or admin creating new user
+      $account->roles = array(2 => 'authenticated');
+    }
+
+//      $form['unisendresponder_list'] = array(
+//        '#type' => 'fieldset',
+//        '#title' => t('Newsletter subscriptions'),
+//        '#weight' => 5,
+//        '#tree' => TRUE,
+//        '#collapsible' => TRUE,
+//        '#attributes' => array('class' => 'unisendresponder-newsletters'),
+//        '#description' => t('Instruction for users'),
+//      );
+    foreach (_unisendresponder_get_available_lists($account) as $list) {
+
+      $default_value = $list->listtype == UNISENDRESPONDER_LISTTYPE_OPTOUT ? TRUE : FALSE;
+
+      if ($list->listtype !== UNISENDRESPONDER_LISTTYPE_REQUIRED) {
+        $form_listtype = 'checkbox';
+        $required = FALSE;
+      } else {
+        $form_listtype = 'checkbox';
+        $default_value = TRUE;
+        $required = TRUE;
+      }
+
+      $form['unisendresponder_list']['unisendresponder_list_' . $list->id] = array(
+        '#type' => $form_listtype,
+        '#title' => t('Subscribe to the @newsletter newsletter', array('@newsletter' => $list->title)),
+        '#default_value' => $default_value,
+        '#description' => $list->description,
+        '#attributes' => array('class' => 'unisendresponder-newsletter-checkbox-' . $list->id),
+        '#required' => $required,
+      );
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_alter
+ *
+ * Add a submit handler to registration and profile forms. Doing this in hook_user breaks user updates
+ */
+function unisendresponder_form_alter(&$form, $form_state, $form_id) {
+//  if($form_id == 'user_register' || ($form_id == 'user_profile_form' && $form['_category']['#value'] == 'account')){
+  if ($form_id == 'user_register_form') {
+    unisendresponder_profile_form($form);
+    $form['#submit'][] = 'unisendresponder_user_profile_submit';
+  }
+}
+
+/**
+ * Submit handler to add users to lists when editing/creating a user
+ */
+function unisendresponder_user_profile_submit($form, &$form_state) {
+  if ($q = getUnisenderObject()) {
+    $account = new stdClass();
+    if (arg(0) == 'user' && is_numeric(arg(1))) {
+      $account = user_load(array('uid' => arg(1)));
+    } else {
+      $account = $form_state['user'];
+    }
+
+    $lists = _unisendresponder_get_available_lists($account);
+    foreach ($lists as $list) {
+      // ignore required lists, they are handled via hook_user
+      if ($list->listtype !== UNISENDRESPONDER_LISTTYPE_REQUIRED) {
+        //$is_subscribed = _unisendresponder_is_subscribed($list->id, $account->mail, $q);
+        $ret = TRUE;
+        $selected = isset($form_state['values']['unisendresponder_list_' . $list->id]);
+        if ($selected) {
+          // subscribe the user if they are not previously subscribed or update existing subscriptions
+          $ret = _unisendresponder_subscribe_user($list->id, $account->mail, '', TRUE);
+        }
+
+        if ($ret->error) {
+          watchdog('unisendresponder', 'up_error: @ret', array('@ret' => print_r($ret, 1)), WATCHDOG_ERROR);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * unisendresponder_reset method
+ */
+function unisendresponder_reset() {
+  variable_del('unisendresponder_unisend_apikey');
+  variable_del('unisendresponder_password');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'unisendresponder_%%%'");
+  drupal_goto(UNISENDRESPONDER_URL_SETTINGS);
+}
+
+/**
+ * implementation of hook_admin_settings
+ * @return <type>
+ */
+function unisendresponder_admin_settings() {
+  // module_load_include('inc', 'unisendresponder', 'unisender.api');
+
+  $form['unisendresponder_account_info'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#title' => 'Unisendresponder Account Information',
+    '#attributes' => array('class' => array('collapsible', 'collapsed')),
+    '#attached' => array('js' => array('misc/collapse.js', 'misc/form.js'))
+  );
+
+  // only show the list selection forms if account info provided
+  $q = getUnisenderObject();
+  $resp = $q->getLists();
+  $form['unisendresponder_account_info']['unisendresponder_setup_account'] = array(
+    '#markup' => t('Current configured account is for: @unisend_login and SSL = @unisend_url', array('@unisend_login' => variable_get('unisendresponder_unisend_login', FALSE), '@unisend_url' => variable_get('unisendresponder_server_ssl', FALSE))),
+  );
+
+  $form['unisendresponder_account_info']['reset'] = array(
+    '#markup' => '<br />' . l('Click here to login as a different user.', 'unisendresponder/reset'),
+  );
+
+  if (isset($resp->code) && $resp->code == 'invalid_api_key') {
+
+    $form['unisendresponder_account_info']['unisendresponder_unisend_apikey'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Unisendresponder apikey'),
+      '#required' => TRUE,
+      '#default_value' => variable_get('unisendresponder_unisend_apikey', ''),
+      '#description' => t('The apikey used to your <a href="http://login.unisendresponder.ru/ru/help/api" target="_blank">API Unisendresponder.ru</a> account.')
+    );
+
+    $form['unisendresponder_account_info']['c'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Your username'),
+      '#description' => t('Enter your username of the <a href="http://unisendresponder.ru/" target="_blank">Unisendresponder.ru</a> It is only for yours komfort.'),
+      '#default_value' => variable_get('unisendresponder_unisend_login', ''),
+    );
+
+
+    $form['unisendresponder_account_info']['unisendresponder_server_ssl'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use SSL Encyption'),
+      '#default_value' => variable_get('unisendresponder_server_ssl', FALSE),
+    );
+  } else {
+
+    if (!empty($resp->result)) {
+      $form['unisendresponder_lists'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => FALSE,
+        '#title' => 'Unisendresponder Subscription Lists',
+        '#tree' => TRUE
+      );
+
+      foreach ($resp->result as $list) {
+        $saved_list = unserialize(variable_get('unisendresponder_lists', NULL));
+        $saved_list = isset($saved_list[$list->id]) ? $saved_list[$list->id] : '';
+
+
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id] = array(
+          '#type' => 'fieldset',
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+          '#title' => $list->title . ' [ID: ' . $list->id . ']',
+          '#tree' => TRUE,
+        );
+
+
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['list_id'] = array(
+          '#type' => 'hidden',
+          '#value' => $list->id,
+        );
+
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['title'] = array(
+          '#type' => 'hidden',
+          '#value' => $list->title,
+        );
+        // Add a row of checkboxes for role enabling.
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['roles'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Roles'),
+          '#description' => t('Choose which roles may subscribe to this list. Select the anonymous user role to have the list appear on the !subscribe page. Select the authenticated user role to have the list appear on the !signup page. For all other roles, the list will appear on the settings page for users with that role.', array('!subscribe' => l(t('Newsletter Subscription'), 'unisendresponder/subscribe'), '!signup' => l(t('User Registration'), 'user/register'))),
+          '#tree' => TRUE,
+        );
+
+        foreach (user_roles() as $rid => $title) {
+          $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['roles'][$rid] = array(
+            '#type' => 'checkbox',
+            '#title' => $title,
+            '#default_value' => $saved_list ? $saved_list->roles[$rid] : '',
+          );
+        }
+
+
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['description'] = array(
+          '#type' => 'textarea',
+          '#title' => t('List Description'),
+          '#default_value' => $saved_list ? $saved_list->description : '',
+          '#description' => t('This description will be shown to the user on the list signup and user account settings pages')
+        );
+
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['form_user_register'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Show Subscription Options on User Registration Page'),
+          '#default_value' => $saved_list ? $saved_list->form_user_register : '',
+        );
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['form_user_edit'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Show Subscription Options on User Edit Screen'),
+          '#default_value' => $saved_list ? $saved_list->form_user_edit : '',
+        );
+
+        $description_listtype = '<strong>Opt-in:</strong> ' . t('Users must sign up to recieve messages') . '<br/><strong>Opt-out:</strong> ' . t(' Users are automatically signed up but may unsubscribe.') . '<br/><strong>Required:</strong> ' . t('Users will remain on the list as long as they have an account and cannot unsubscribe.');
+
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['listtype'] = array(
+          '#type' => 'select',
+          '#title' => t('Subscription Method'),
+          '#options' => array(UNISENDRESPONDER_LISTTYPE_OPTIN => "Opt-in", UNISENDRESPONDER_LISTTYPE_OPTOUT => 'Opt-out', UNISENDRESPONDER_LISTTYPE_REQUIRED => 'Required'),
+          '#default_value' => ($saved_list && $saved_list->listtype) ? $saved_list->listtype : UNISENDRESPONDER_LISTTYPE_OPTOUT,
+          '#description' => $description_listtype,
+        );
+
+        $form['unisendresponder_lists']['unisendresponder_list_' . $list->id]['doublein'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Not require send a confirmation e-mail to the user'),
+          '#default_value' => $saved_list ? $saved_list->doublein : '',
+          '#description' => t('Number of e-mail addresses that you may add within confirmation (per day): up to 20, if no IP address is specified; up to 30, if IP address and date/time is specified; up to 50, if IP address and date/time of request and confirmation is specified.  If number of requests exeeds the limit, all new subscribers get the staus "new" (not "active") and we send a confirmation e-mail to them!'),
+        );
+      }
+
+
+
+
+      $form['unisendresponder_global'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#title' => 'Global settings for all lists',
+      );
+      $form['unisendresponder_global']['unisendresponder_debug'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('unisendresponder debug'),
+        '#default_value' => variable_get('unisendresponder_debug', ''),
+        '#description' => t('unisendresponder_debug'),
+      );
+
+      $form['unisendresponder_global']['global_doublein'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('GLOBAL! Not require send a confirmation e-mail to the user FOR ALL LISTS'),
+        '#default_value' => variable_get('global_doublein', ''),
+        '#description' => t('Number of e-mail addresses that you may add within confirmation (per day): up to 20, if no IP address is specified; up to 30, if IP address and date/time is specified; up to 50, if IP address and date/time of request and confirmation is specified.  If number of requests exeeds the limit, all new subscribers get the staus "new" (not "active") and we send a confirmation e-mail to them!'),
+      );
+
+      $form['unisendresponder_messages'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#title' => 'Messaging',
+      );
+      $form['unisendresponder_messages']['unisendresponder_subscription_success_message'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Subscription Success Message'),
+        '#default_value' => variable_get('unisendresponder_subscription_success_message', UNISENDRESPONDER_SUBSCRIPTION_SUCCESS)
+      );
+      $form['unisendresponder_messages']['unisendresponder_subscription_failure_message'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Subscription Failure Message'),
+        '#default_value' => variable_get('unisendresponder_subscription_failure_message', UNISENDRESPONDER_SUBSCRIPTION_FAILURE)
+      );
+      $form['unisendresponder_messages']['unisendresponder_unsubscription_success_message'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Unsubscription Success Message'),
+        '#default_value' => variable_get('unisendresponder_unsubscription_success_message', UNISENDRESPONDER_UNSUBSCRIPTION_SUCCESS)
+      );
+      $form['unisendresponder_messages']['unisendresponder_unsubscription_failure_message'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Unsubscription Failure Message'),
+        '#default_value' => variable_get('unisendresponder_unsubscription_failure_message', UNISENDRESPONDER_UNSUBSCRIPTION_FAILURE)
+      );
+    }
+
+    $form['#validate'][] = 'unisendresponder_admin_settings_validate';
+  }
+
+
+  return system_settings_form($form);
+}
+
+/**
+ * validate the admin settings and serialize the saved lists into objects
+ *
+ * @param <type> $form
+ * @param <type> $form_state
+ */
+function unisendresponder_admin_settings_validate($form, &$form_state) {
+
+  // no lists selected or first time here
+  if (!is_array($form_state['values']['unisendresponder_lists']) || empty($form_state['values']['unisendresponder_lists'])) {
+    return;
+  }
+
+  $lists = array();
+  foreach ($form_state['values']['unisendresponder_lists'] as $form_list) {
+    $list = new stdClass();
+    $list->id = $form_list['list_id'];
+    $list->title = isset($form_list['title']) ? $form_list['title'] : '';
+    $list->roles = array_filter($form_list['roles']);
+    $list->form_user_register = $form_list['form_user_register'];
+    $list->form_user_edit = $form_list['form_user_edit'];
+    $list->description = $form_list['description'];
+    $list->listtype = $form_list['listtype'];
+    $list->doublein = $form_list['doublein'];
+    $list->dopfields = isset($form_list['dopfields']) ? $form_list['dopfields'] : '';
+    $lists[$form_list['list_id']] = $list;
+  }
+
+  // remove lists from the form_state
+  unset($form_state['values']['unisendresponder_lists']);
+  variable_set('unisendresponder_lists', serialize($lists));
+}
+
+/**
+ * Return a form for a given Unisendresponder list
+ *
+ */
+function unisendresponder_subscribe_form($form, &$form_state, $account = NULL) {
+  global $user;
+  $form = array();
+
+  if (empty($account)) {
+    $account = $user;
+  }
+
+  $lists = _unisendresponder_get_available_lists($user);
+  $form['unisendresponder_lists'] = array(
+    '#type' => 'fieldset',
+    //'#title'      => $list->title . ' [ID: ' . $list->id .']',
+    '#tree' => TRUE,
+  );
+  if ($lists) {
+    foreach ($lists as $list) {
+      $options[$list->id] = $list->title;
+
+      $form['unisendresponder_lists']['unisendresponder_list']['list_id'] = array(
+        '#type' => 'checkboxes',
+        '#description' => $list->description,
+        '#options' => isset($options) ? $options : array(),
+        '#title' => $list->title,
+        '#attributes' => array('class' => 'unisendresponder-newsletter-checkbox-' . $list->id),
+      );
+    }
+
+    if ($list->id) {
+      $form['unisendresponder_lists']['name'] = array(
+        '#title' => t('Your name'),
+        '#type' => 'textfield',
+        '#size' => '20',
+        '#default_value' => $user->name,
+        '#required' => TRUE,
+      );
+
+      $form['unisendresponder_lists']['email'] = array(
+        '#title' => t('Your e-mail'),
+        '#type' => 'textfield',
+        '#size' => '20',
+        '#default_value' => $user->mail,
+        '#required' => TRUE,
+      );
+
+
+      $form['unisendresponder_lists']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Sign Up!'),
+        '#weight' => 100
+      );
+    }
+  } else {
+    $form['unisendresponder_lists']['#markup'] = t('Not available subscriptions');
+  }
+
+  return $form;
+}
+
+/**
+ * Submit handler for stand alone form
+ *
+ * @param <type> $form
+ * @param <type> $form_state
+ */
+function unisendresponder_subscribe_form_submit($form, &$form_state) {
+  $success = FALSE;
+  $values = $form_state['values']['unisendresponder_lists'];
+  if (!is_array($form_state['values']['unisendresponder_lists']['unisendresponder_list'])) {
+    return;
+  }
+
+  $form_list_id = array();
+  foreach ($form_state['values']['unisendresponder_lists']['unisendresponder_list']['list_id'] as $list_id) {
+    if ($list_id > 0) {
+      $form_list_id[] = $list_id;
+    }
+  }
+  $list_ids = implode(',', array_filter($form_list_id));
+
+  $success = _unisendresponder_subscribe_user($list_ids, $values['email'], array('Name' => $values['name']), TRUE);
+  // ������������ ������ ��� �������� �����
+  if ($success) {
+    $msg = variable_get('unisendresponder_subscription_success_message', UNISENDRESPONDER_SUBSCRIPTION_SUCCESS);
+  } else {
+    $msg = variable_get('unisendresponder_subscription_failure_message', UNISENDRESPONDER_SUBSCRIPTION_FAILURE);
+  }
+  drupal_set_message($msg);
+}
+
+/**
+ * Unisendresponder unsubscribe form
+ *
+ * @param <type> $form_values
+ * @return <type>
+ */
+function unisendresponder_unsubscribe_form($form_values = array()) {
+  $form = array();
+  $form['intro'] = array(
+    '#markup' => t('Use this form to unsubscribe from all of our newsletters.'),
+  );
+
+  $form['EMAIL'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Address'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Unsubscribe'),
+  );
+  return $form;
+}
+
+/**
+ * submit handler for unsubscribe form
+ *
+ * @param <type> $form
+ * @param <type> $form_state
+ */
+function unisendresponder_unsubscribe_form_submit($form, &$form_state) {
+  $q = getUnisenderObject();
+  $lists = $q->getLists();
+  if ($lists) {
+    $success = TRUE;
+    foreach ($lists as $list) {
+      $success = $success && _unisendresponder_unsubscribe_user($list, $form_state['values']['EMAIL'], TRUE, $q);
+      if ($success) {
+        drupal_set_message(variable_get('unisendresponder_unsubscription_success_message', UNISENDRESPONDER_UNSUBSCRIPTION_SUCCESS));
+      } else {
+        drupal_set_message(variable_get('unisendresponder_unsubscription_failure_message', UNISENDRESPONDER_UNSUBSCRIPTION_FAILURE));
+      }
+    }
+  }
+}
+
+/**
+ * validate unsubscribe form
+ *
+ * @param <type> $form
+ * @param <type> $form_state
+ */
+function unisendresponder_unsubscribe_form_validate($form, &$form_state) {
+  if (!$form_state['values']['EMAIL']) {
+    form_set_error('EMAIL', t('Please enter your email address.'));
+  } else {
+    $q = getUnisenderObject();
+    if ($q) {
+      $subscribed = FALSE;
+      $resp = $q->getLists();
+      foreach ((array) $resp->result as $list) {
+        $subscribed = $subscribed || _unisendresponder_is_subscribed($list->id, $form_state['values']['EMAIL']);
+      }
+      if (!$subscribed) {
+        form_set_error('', t('That email address could not be found.'));
+      }
+    } else {
+      form_set_error('', t('There was an error processing your request. Please try again later.'));
+    }
+  }
+}
+
+/**
+ * Check if the given user is subscribed to the given list
+ */
+function _unisendresponder_is_subscribed($listid, $mail) {
+  $is_subscribed = FALSE;
+  $q = getUnisenderObject();
+  if ($q) {
+    // $user_sub_info       = $q->getUserInfo($listid, $mail); //доделать когда будет такая функция API
+    $is_subscribed = @$user_sub_info['result'] == 'subscribed';
+  }
+  return $is_subscribed;
+}
+
+/**
+ * Subscribe or update a user in a givne list
+ */
+function _unisendresponder_subscribe_user($list_all, $email, $extra = array(), $message = TRUE) {
+
+  $resp = FALSE;
+  $email = strtolower($email);
+  if (variable_get('global_doublein', '')) {
+    $double_optin = variable_get('global_doublein', '');
+  } else {
+    $double_optin = isset($list->doublein) ? $list->doublein : 0;
+  }
+  $list_title = $list_all;
+  //$list_all = isset($list_all->id)?$list_all->id:0;
+
+  $q = getUnisenderObject();
+  if ($q) {
+    $resp = $q->listSubscribe($list_all, $email, $extra, $double_optin);
+
+    if (isset($resp->error)) {
+      watchdog('unisendresponder', 'Subscribe_error: @success, @email, @list', array('@email' => $email, '@list' => $list_title, '@success' => print_r($resp, 1)), WATCHDOG_ERROR);
+    }
+
+    if (isset($resp->result)) {
+      watchdog('unisendresponder', 'Subscribe_user: person_id - @success, @email, list - @list', array('@email' => $email, '@list' => $list_all, '@success' => $resp->result->person_id), WATCHDOG_NOTICE);
+      if (variable_get('unisendresponder_debug', TRUE)) {
+        watchdog('unisendresponder', 'Subscribe_full_result: @success, @email, list- @list', array('@email' => $email, '@list' => $list_all, '@success' => print_r($resp, 1)), WATCHDOG_DEBUG);
+      }
+    }
+
+    if (isset($resp->warnings)) {
+      watchdog('unisendresponder', 'Subscribe_warnings: @success, @email, @list', array('@email' => $email, '@list' => $list_all, '@success' => print_r($resp->warnings, 1)), WATCHDOG_WARNING);
+    }
+  }
+
+
+  if (!$resp) {
+    watchdog('unisendresponder', 'Subscribe_null: @success, @email, @list', array('@email' => $email, '@list' => $list_all, '@success' => print_r($resp, 1)), WATCHDOG_ERROR);
+  }
+
+  if ($message && !$resp->error && isset($resp->result)) {
+    if ($double_optin == 0)
+      drupal_set_message(t('You have chosen to subscribe to selected lists. An email will be sent to your address. Click the link in the email to confirm the subscription.', array('%list' => $list_all)));
+    else
+      drupal_set_message(t('You have subscribed to %list.', array('%list' => $list_title))); // множественно при регистрации и единожды при отправке формы
+  }
+
+  if (!$resp->error) {
+    watchdog('unisendresponder', '@email was @action list @list.', array('@action' => $action, '@email' => $email, '@list' => $list_all), WATCHDOG_NOTICE);
+  } else {
+    watchdog('unisendresponder', '@email has failed to subscribed to @list.', array('@email' => $email, '@list' => $list->title), WATCHDOG_WARNING);
+  }
+
+  return $resp;
+}
+
+/**
+ * Unsubscribe the given user from the given list
+ */
+function _unisendresponder_unsubscribe_user($list, $mail, $message = TRUE, $q = NULL) {
+  if ($q || $q = getUnisenderObject()) {
+    if (_unisendresponder_is_subscribed($list->id, $mail, $q)) {
+      $contact_type = 'email';
+      $unisend_apikey = variable_get('unisendresponder_unisend_apikey', FALSE);
+      $success = $q->listUnsubscribe($unisend_apikey, $contact_type, $list->id, $mail);
+      if ($message && $success) {
+        drupal_set_message(t('You have unsubscribed from %list.', array('%list' => $list->title)));
+      }
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Get all of the lists that the given user can subscribe to
+ */
+function _unisendresponder_get_available_lists($user) {
+  $all_lists = variable_get('unisendresponder_lists', array());
+  $available_lists = array();
+  if (!empty($all_lists)) {
+    $all_lists = unserialize($all_lists);
+    foreach ($all_lists as $key => $list) {
+      foreach ((array) $user->roles as $rid => $info) {
+        if ($list->roles && $list->roles[$rid]) {
+          $available_lists[] = $list;
+          break;
+        }
+      }
+    }
+  }
+
+  return $available_lists;
+}
+
+/**
+ * Get all of the lists that the given user must be subscribed to
+ */
+function _unisendresponder_get_required_lists() {
+  $data = variable_get('unisendresponder_lists', NULL);
+  $lists = array();
+  if (!empty($data)) {
+    $lists = unserialize($data);
+    foreach ($lists as $key => $list) {
+      if ($list->listtype !== UNISENDRESPONDER_LISTTYPE_REQUIRED) {
+        unset($lists[$key]);
+      }
+    }
+  }
+  return $lists;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function unisendresponder_block_info() {
+  global $user;
+
+  $blocks['unisendresponder_subscribe_form']['info'] = t("Unisendresponder Subscription Form");
+  $blocks['online']['cache'] = DRUPAL_NO_CACHE;
+  //$blocks['online']['properties']['administrative'] = TRUE;
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function unisendresponder_block_view($delta = '') {
+  global $user;
+  $block = array();
+
+  switch ($delta) {
+    case 'unisendresponder_subscribe_form':
+      $block['subject'] = t("Unisendresponder Subscription Form");
+      $block['content'] = drupal_get_form('unisendresponder_subscribe_form');
+      return $block;
+  }
+}
+
+/**
+ * Get a Unisendresponder API object for communication with the unisendresponder server
+ */
+function getUnisenderObject() {
+  $q = new UNISENDAPI(variable_get('unisendresponder_unisend_apikey', ''));
+  if (isset($q->error)) {
+    watchdog('unisendresponder', 'error_code: ' . $q->code . 'error: ' . $q->error, array(), WATCHDOG_ERROR);
+    return NULL;
+  }
+  return $q;
+}

@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function unisendresponder_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'unisendresponder_%%'");
+}
+
+
+/**
+ * implementation of hook_update_N
+ */
+function unisendresponder_update_1(){
+  // clean up old variables
+  $ret = array();
+  $ret[] = update_sql("DELETE FROM {variable} WHERE name like 'unisendresponder_list\_%'");
+  cache_clear_all();
+  return $ret;
+}

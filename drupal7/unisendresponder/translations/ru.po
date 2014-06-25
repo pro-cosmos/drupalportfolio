@@ -1,0 +1,341 @@
+# $Id$
+#
+# Russian translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  unisendresponder.module,v 1.2.2.1.2.3.2.8.2.36 2010/08/09 18:41:08 Wiseman
+#  unisendresponder.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2010-08-09 19:57+0400\n"
+"PO-Revision-Date: 2010-08-09 19:57+0400\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Russian <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=((((n%10)==1)&&((n%100)!=11))?(0):(((((n%10)>=2)&&((n%10)<=4))&&(((n%100)<10)||((n%100)>=20)))?(1):2));\n"
+
+#: unisendresponder.module:11
+msgid "Thank you, you have been successfully subscribed."
+msgstr "Благодарим, вы были успешно подписаны."
+
+#: unisendresponder.module:12
+msgid "We were unable to subscribe you at this time. Please try again later."
+msgstr ""
+"К сожалению, в данный момент подписка "
+"невозможна. Попробуйте позже."
+
+#: unisendresponder.module:13
+msgid "Thank you, you have been successfully unsubscribed."
+msgstr "Благодарим, ваша подписка удалена."
+
+#: unisendresponder.module:14
+msgid "We were unable to unsubscribe you at this time. Please try again later."
+msgstr ""
+
+#: unisendresponder.module:117
+msgid "РЕГ <pre>%listresponse </pre>"
+msgstr ""
+
+#: unisendresponder.module:159
+msgid "Subscribe to the @newsletter newsletter"
+msgstr "Подпишитесь на @newsletter"
+
+#: unisendresponder.module:171
+msgid "Newsletter subscriptions"
+msgstr ""
+
+#: unisendresponder.module:175
+msgid "Instruction for users"
+msgstr "Вы можете подписаться на рассылки перечисленные ниже. Помеченные звездочкой - обязательны. Без них регистрация невозможна."
+
+#: unisendresponder.module:262
+msgid "Current configured account is for: @unisend_login and SSL = @unisend_url"
+msgstr ""
+"Текущий аккаунт сконфигурирован для "
+"пользователя @unisend_login, настройки SSL = "
+"@unisend_url"
+
+#: unisendresponder.module:308
+msgid "Roles"
+msgstr "Роли"
+
+#: unisendresponder.module:309
+msgid "Choose which roles may subscribe to this list. Select the anonymous user role to have the list appear on the !subscribe page. Select the authenticated user role to have the list appear on the !signup page. For all other roles, the list will appear on the settings page for users with that role."
+msgstr ""
+"Выберите какие роли могут быть "
+"подписаны на данную рассылку. Для "
+"отображения формы подписки на "
+"странице !subscribe укажите роль "
+"анонимного пользователя. Для "
+"включения опций подписки на страницу "
+"регистрации !signup, необходимо выбрать "
+"роль - зарегистрированный "
+"пользователь."
+
+#: unisendresponder.module:309;27
+msgid "Newsletter Subscription"
+msgstr "Подписка на рассылки"
+
+#: unisendresponder.module:309
+msgid "User Registration"
+msgstr ""
+
+#: unisendresponder.module:324
+msgid "List Description"
+msgstr "Описание рассылки"
+
+#: unisendresponder.module:326
+msgid "This description will be shown to the user on the list signup and user account settings pages"
+msgstr ""
+
+#: unisendresponder.module:331
+msgid "Show Subscription Options on User Registration Page"
+msgstr ""
+"Дать возможность подписываться при "
+"регистрации - отображать список "
+"доступных рассылок"
+
+#: unisendresponder.module:336
+msgid "Show Subscription Options on User Edit Screen"
+msgstr ""
+
+#: unisendresponder.module:340
+msgid "Users must sign up to recieve messages"
+msgstr "добровольная подписка - пользователю нужно выбрать рассылку."
+
+#: unisendresponder.module:340
+msgid " Users are automatically signed up but may unsubscribe."
+msgstr "пользователь будет подписан (опция отмечена по умолчанию), но можно не подписываться."
+
+#: unisendresponder.module:340
+msgid "Users will remain on the list as long as they have an account and cannot unsubscribe."
+msgstr "подписка обязательна - отказаться во время регистрации нельзя."
+
+#: unisendresponder.module:344
+msgid "Subscription Method"
+msgstr ""
+
+#: unisendresponder.module:352
+msgid "Not require send a confirmation e-mail to the user"
+msgstr ""
+
+#: unisendresponder.module:354;375
+msgid "Number of e-mail addresses that you may add within confirmation (per day): up to 20, if no IP address is specified; up to 30, if IP address and date/time is specified; up to 50, if IP address and date/time of request and confirmation is specified.  If number of requests exeeds the limit, all new subscribers get the staus \"new\" (not \"active\") and we send a confirmation e-mail to them!"
+msgstr ""
+
+#: unisendresponder.module:366
+msgid "unisendresponder debug"
+msgstr "Режим отладки"
+
+#: unisendresponder.module:368
+msgid "unisendresponder_debug"
+msgstr ""
+
+#: unisendresponder.module:373
+msgid "GLOBAL! Not require send a confirmation e-mail to the user FOR ALL LISTS"
+msgstr ""
+"ДЛЯ ВСЕХ СПИСКОВ! Не отправлять письмо "
+"для подтверждения подписки."
+
+#: unisendresponder.module:386
+msgid "Subscription Success Message"
+msgstr ""
+
+#: unisendresponder.module:391
+msgid "Subscription Failure Message"
+msgstr ""
+
+#: unisendresponder.module:396
+msgid "Unsubscription Success Message"
+msgstr ""
+
+#: unisendresponder.module:401
+msgid "Unsubscription Failure Message"
+msgstr ""
+
+#: unisendresponder.module:408
+msgid "You do not have any valid Unisendresponder mailing lists."
+msgstr "Списков рассылки не найдено"
+
+#: unisendresponder.module:414
+msgid "Incorrect API key is provided. Please check if api_key matched the value provided in your account."
+msgstr ""
+"Указанный ключ API некорректен. Будьте "
+"внимательны."
+
+#: unisendresponder.module:416
+msgid "Could not retrieve info for unisendresponder. The following error was returned: <br /><b>error_code:</b> %error_code <br /><b>description error:</b> %error "
+msgstr ""
+
+#: unisendresponder.module:419
+msgid "Could not retrieve info for unisendresponder for an unknown reason. Please try again later"
+msgstr ""
+
+#: unisendresponder.module:425
+msgid "Unisendresponder apikey"
+msgstr "Ваш API ключ для Unisendresponder.ru"
+
+#: unisendresponder.module:428
+msgid "The apikey used to your <a href=\"http://login.unisendresponder.ru/ru/help/api\" target=\"_blank\">API Unisendresponder.ru</a> account."
+msgstr ""
+"Узнать API ключ вы можете в своем "
+"аккаунте <a "
+"href=\"http://login.unisendresponder.ru/ru/help/api\" "
+"target=\"_blank\">API Unisendresponder.ru</a>."
+
+#: unisendresponder.module:433
+msgid "Your username"
+msgstr "Имя пользователя"
+
+#: unisendresponder.module:434
+msgid "Enter your username of the <a href=\"http://unisendresponder.ru/\" target=\"_blank\">Unisendresponder.ru</a> It is only for yours komfort."
+msgstr ""
+"Укажите имя пользователя для <a "
+"href=\"http://unisendresponder.ru/\" "
+"target=\"_blank\">Unisendresponder.ru</a>. В авторизации "
+"не используется."
+
+#: unisendresponder.module:441
+msgid "Use SSL Encyption"
+msgstr "Использовать SSL-протокол шифрования"
+
+#: unisendresponder.module:532
+msgid "Your name"
+msgstr "Ваше имя"
+
+#: unisendresponder.module:539
+msgid "Your e-mail"
+msgstr "Ваш e-mail"
+
+#: unisendresponder.module:548
+msgid "Sign Up!"
+msgstr "Подписаться"
+
+#: unisendresponder.module:609
+msgid "Use this form to unsubscribe from all of our newsletters."
+msgstr ""
+
+#: unisendresponder.module:614
+msgid "Email Address"
+msgstr ""
+
+#: unisendresponder.module:619
+msgid "Unsubscribe"
+msgstr "Отказаться от подписки"
+
+#: unisendresponder.module:653
+msgid "Please enter your email address."
+msgstr ""
+
+#: unisendresponder.module:662
+msgid "That email address could not be found."
+msgstr ""
+
+#: unisendresponder.module:666
+msgid "There was an error processing your request. Please try again later."
+msgstr ""
+
+#: unisendresponder.module:733
+msgid "You have chosen to subscribe to selected lists. An email will be sent to your address. Click the link in the email to confirm the subscription."
+msgstr ""
+"Вам было отправлено письмо для "
+"подтверждения подписки на выбранные "
+"рассылки."
+
+#: unisendresponder.module:736
+msgid "You have subscribed to %list."
+msgstr "Вы подписались на рассылку \"%list\""
+
+#: unisendresponder.module:762
+msgid "You have unsubscribed from %list."
+msgstr "Вы отписались от рассылки \"%list\""
+
+#: unisendresponder.module:828
+msgid "Unisendresponder Subscription Form"
+msgstr ""
+
+#: unisendresponder.module:872
+msgid "!title field is required."
+msgstr "!title - обязательно!"
+
+#: unisendresponder.module:882
+msgid "This field is required."
+msgstr "Обязательное поле"
+
+#: unisendresponder.module:122;224;713;717;720;725;729;742;746
+msgid "unisendresponder"
+msgstr ""
+
+#: unisendresponder.module:122
+msgid "Unisendresponder: %email updated in list %list on action %action"
+msgstr ""
+
+#: unisendresponder.module:224
+msgid "up_error: @ret"
+msgstr ""
+
+#: unisendresponder.module:713
+msgid "Subscribe_error: @success, @email, @list"
+msgstr ""
+
+#: unisendresponder.module:717
+msgid "Subscribe_user: person_id - @success, @email, list - @list"
+msgstr ""
+
+#: unisendresponder.module:720
+msgid "Subscribe_full_result: @success, @email, list- @list"
+msgstr ""
+
+#: unisendresponder.module:725
+msgid "Subscribe_warnings: @success, @email, @list"
+msgstr ""
+
+#: unisendresponder.module:729
+msgid "Subscribe_null: @success, @email, @list"
+msgstr ""
+
+#: unisendresponder.module:742
+msgid "@email was @action list @list."
+msgstr ""
+
+#: unisendresponder.module:746
+msgid "@email has failed to subscribed to @list."
+msgstr ""
+
+#: unisendresponder.module:82
+msgid "administer unisendresponder"
+msgstr ""
+
+#: unisendresponder.module:40
+msgid "Newsletter Unsubscribe"
+msgstr ""
+
+#: unisendresponder.module:46
+msgid "Unsubscription Confirmed"
+msgstr ""
+
+#: unisendresponder.module:52
+msgid "Unsubscription Failed"
+msgstr ""
+
+#: unisendresponder.module:57 unisendresponder.info:0
+msgid "Unisendresponder"
+msgstr ""
+
+#: unisendresponder.module:58
+msgid "Manage Unisendresponder Settings."
+msgstr ""
+
+#: unisendresponder.info:0
+msgid "Unisendresponder email service integration with unisendresponder.ru."
+msgstr ""
+
+#: unisendresponder.info:0
+msgid "mail"
+msgstr "почта"
+

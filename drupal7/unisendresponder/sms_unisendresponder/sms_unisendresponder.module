@@ -1,0 +1,272 @@
+<?php
+// $Id: sms_unisendresponder.module,v 1.2 2010/08/09 07:02:38 wiseman Exp $
+
+/**
+ * @file
+  * This is a gateway module to use with the sms
+ * framework module. It provides a sms service
+ * to UNISENDRESPONDER http://unisendresponder.ru
+ *
+ */
+
+define('SMS_UNISENDRESPONDER_URL', 'api.unisender.com/ru/api/');
+define('SMS_UNISENDRESPONDER_GATEWAYS_URL', 'admin/smsframework/gateways/sms_unisendresponder');
+/**
+ * Implementation of hook_menu().
+ */
+function sms_unisendresponder_menu() {
+  $items = array();
+
+  $items['sms_unisendresponder/reset'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('sms_unisendresponder_reset'),
+      'type' => MENU_CALLBACK,
+      'access arguments' => array('administer sms_unisendresponder'),
+  );
+
+  return $items;
+}
+
+
+
+/**
+ * Implementation of hook_permission()
+ */
+function sms_unisendresponder_permission() {
+   return array(
+    'administer sms_unisendresponder' => array('title' => t('administer sms_unisendresponder'))
+  );
+}
+
+/**
+ * Implementation of hook_gateway_info().
+ */
+function sms_unisendresponder_gateway_info() {
+  return array(
+      'sms_unisendresponder' => array(
+      'name' => 'UNISENDRESPONDER',
+      'send' => 'sms_unisendresponder_send',
+      'receive' => TRUE,
+      'configure form' => 'sms_unisendresponder_admin_form',
+    )
+  );
+}
+
+/**
+ * implementation of hook_reset
+ */
+function sms_unisendresponder_reset() {
+  variable_del('sms_sms_unisendresponder_settings');
+  drupal_goto(SMS_UNISENDRESPONDER_GATEWAYS_URL);
+}
+
+/**
+ * Form to configure the gateway
+ * @param array $config the current config
+ */
+function sms_unisendresponder_admin_form($configuration) {
+	  $form = array();
+
+	  $form['sms_unisendresponder_apikey'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Account apikey'),
+	    '#description' => t('Please enter your UNISENDRESPONDER apikey. If have not yet, you can get it at the <a href="http://login.unisendresponder.ru/ru/register"> UnisendResponder account</a>'),
+	    '#default_value' => $configuration['sms_unisendresponder_apikey'],
+	    '#required' => TRUE,
+	    '#size' => '50',
+	  );
+
+	      $form['sms_unisendresponder_apikey_reset'] = array(
+		'#markup' => l('Click here to login as a different user.', 'sms_unisendresponder/reset'),
+		    );
+
+	  $form['sms_unisendresponder_ssl'] = array(
+	    '#type' => 'checkbox',
+	    '#title' => t('Use SSL Encyption'),
+	    '#default_value' => $configuration['sms_unisendresponder_ssl'],
+	  );
+	  $form['sms_unisendresponder_from'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('From'),
+	    '#description' => t('This string will be used as the source identifier on the receivers device.  <br/>For details have a look at the <a href="http://login.unisendresponder.ru/ru/help/api/sendSms"> UnisendResponder API</a>'),
+	    '#default_value' => $configuration['sms_unisendresponder_from'],
+	    '#required' => TRUE,
+	    '#maxlength' => '11',
+	    '#size' => '11',
+	  );
+
+
+	    $form['sms_unisendresponder_testnumber'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Test number'),
+	    '#description' => t('Number phone for test '),
+	    '#default_value' => $configuration['sms_unisendresponder_testnumber'],
+	    '#required' => TRUE,
+	    '#size' => '25',
+	  );
+
+	    $form['sms_unisendresponder_testmessage'] = array(
+	    '#type' => 'textarea',
+	    '#title' => t('Message for test - max 160'),
+	    '#description' => t('Message for test - max 160'),
+	    '#default_value' => $configuration['sms_unisendresponder_testmessage'],
+	    '#required' => TRUE,
+	    '#rows' => '2',
+	  );
+
+  return $form;
+}
+
+/**
+ * Validte the admin form
+ */
+function sms_unisendresponder_admin_form_validate($form, &$form_state) {
+  $config = $form_state['values'];
+  $ok = _sms_unisendresponder_api_confirm($config);
+
+  if (!$ok['status']) {
+    form_set_error('sms_unisendresponder_account', t('The SMS gateway does not accept these account settings.'));
+    form_set_error('sms_unisendresponder_password', t('The following error occured: @error', array('@error' => $ok['message'])));
+  }
+  else {
+    drupal_set_message(t('The SMS gateway configuration has been tested successfully: @data', array('@data' => $ok['message'])));
+  }
+}
+
+/**
+ * Confirm the API Settings
+ */
+function _sms_unisendresponder_api_confirm($config) {
+  //  drupal_set_message(t('URL <pre>%listresponse </pre>', array('%listresponse' => print_r($config['sms_unisendresponder_testmessage'], TRUE))));
+  return sms_unisendresponder_send($config['sms_unisendresponder_testnumber'], $config['sms_unisendresponder_testmessage'], array('sms_unisendresponder_config' => $config));
+}
+
+/**
+ * Send a sms
+ */
+function sms_unisendresponder_send($number, $message, $options)  {
+  // Test the form settings, if given.
+  if ($options['sms_unisendresponder_config']) {
+    $config = $options['sms_unisendresponder_config'];
+  }
+  else {
+    $gateway = sms_gateways('gateway', 'sms_unisendresponder');
+    $config = $gateway['configuration'];
+  }
+
+  // Cleanup the number
+  //$number = str_replace('+', '00', $number);
+  $number = preg_replace('(\D)', '', $number);
+
+//
+
+  // Assemble the url
+  if ($config['sms_unisendresponder_ssl'] && $config['sms_unisendresponder_ssl'] == 1) {
+    $scheme = 'https';
+  }
+  else {
+    $scheme = 'http';
+  }
+  $url = $scheme . '://'. SMS_UNISENDRESPONDER_URL . 'sendSms';
+  $url .= '?format=json';
+  $url .= '&api_key='. $config['sms_unisendresponder_apikey'];
+  $url .= '&phone='. $number;
+  $url .= '&sender='. rawurlencode(utf8_decode($config['sms_unisendresponder_from']));
+ // $url .= '&text='. rawurlencode(utf8_decode($message));
+ $url .= '&text='. rawurlencode($message);
+
+
+  $headers = array('Content-Type' => 'application/x-www-form-urlencoded');
+
+  //$res = drupal_http_request($url, $headers, 'POST');
+  $res = drupal_http_request($url, array('headers'=>$headers, 'method'=>'POST'));
+  $res = _jsonDecodeSMS($res->data);
+
+ //debug
+ // drupal_set_message(t('URL <pre>%listresponse </pre>', array('%listresponse' => print_r($res, TRUE))));
+
+  // Check for  error
+  if ($res->error) {
+    return array(
+      'status' => FALSE,
+      'message' => t('error code - @error', array('@error' => $res->error))
+    );
+  }
+
+	if ($res->result->sms_id) {
+
+		watchdog('sms', 'SMS message sent to: @number', array('@number' => $number), WATCHDOG_INFO);
+
+	      return array(
+		'status' => TRUE,
+	        'message' => t('SMS id = @sms_id, @checksms', array('@sms_id' => $res->result->sms_id, '@checksms' => $checksms->result->status )),
+	      );
+
+	}
+
+
+  return $return;
+}
+
+/**
+ * Send a sms
+ */
+function sms_unisendresponder_checksms($apikey, $sms_id)  {
+
+// Assemble the url
+  if ($config['sms_unisendresponder_ssl'] && $config['sms_unisendresponder_ssl'] == 1) {
+    $scheme = 'https';
+  }
+  else {
+    $scheme = 'http';
+  }
+  $url = $scheme . '://'. SMS_UNISENDRESPONDER_URL . 'checkSms';
+  $url .= '?format=json';
+  $url .= '&api_key='. $apikey;
+  $url .= '&sms_id='. $sms_id;
+
+  $headers = array('Content-Type' => 'application/x-www-form-urlencoded');
+
+  $res = drupal_http_request($url, array('headers'=>$headers, 'method'=>'POST'));
+  $res = _jsonDecodeSMS($res->data);
+
+  return $res;
+}
+
+/**** jsonDecode *****/
+function _jsonDecodeSMS($data)  {
+        //Thanks to www at walidator dot info
+        //(http://www.php.net/manual/en/function.json-decode.php#91216)
+/**
+* json_decode for < PHP 5
+*/
+	if (!function_exists('json_decode')) {
+	  function json_decode($v) {
+	    if ($v{0} == '"') {
+	      $v = drupal_substr($v, 1, -1);
+	    }
+	    elseif ($v{0} == '{') {
+	      $var = explode(",", drupal_substr($v, 1, -1)); # changed from drupal_substr($v, 1, -2), since it was chopping off the final quote
+	      $v = array();
+	      foreach ($var as $value) {
+		$va = explode(":", $value);
+		# added the following condition to remove quotes from the key
+		if($va[0]{0} == '"') {
+		    $va[0] = drupal_substr($va[0], 1, -1);
+		}
+		$v[$va[0]] = json_decode($va[1]);
+	      }
+	    }
+	    elseif ($v{0} == '[') {
+	      $var = explode(",", drupal_substr($v, 1, -2));
+	      $v = array();
+	      foreach ($var as $value) {
+		$v[] = json_decode($va[0]);
+	      }
+	    }
+	    return $v;
+	   }
+	 }
+
+        return json_decode($data);
+    }
