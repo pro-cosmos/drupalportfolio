@@ -1,0 +1,242 @@
+<?php
+
+/**
+ * @file
+ * Mnogo diff module.
+ */
+
+/**
+ * Check if entity type supported by mnogo_diff module.
+ */
+function mnogo_diff_entity_support($entity, $type) {
+  $supported = array(
+    'node'                      => array('news', 'article', 'partner', 'simpleads'),
+    'comment'                   => array('comment_node_partner'),
+    'commerce_customer_profile' => array(),
+    'contactdetails'            => array(),
+    'entityform'                => array(),
+    'message'                   => array(),
+    'mnogo_email'               => array(),
+    'user'                      => array(),
+  );
+
+  $bundle = $type;
+  // Get entity bundle.
+  $entity_info = entity_get_info();
+  if ($bundle_field = $entity_info[$type]['entity keys']['bundle']) {
+    if (isset($entity->{$bundle_field})) {
+      $bundle = $entity->{$bundle_field};
+    }
+  }
+  // Check if given bundle is supported.
+  foreach ($supported as $supp_type => $supp_bundles) {
+    if ($type == $supp_type) {
+      return (empty($supp_bundles)) ? TRUE : in_array($bundle, $supp_bundles);
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function mnogo_diff_entity_delete($entity, $type) {
+  _mnogo_diff_hook_process($entity, $type, 'delete');
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function mnogo_diff_entity_insert($entity, $type) {
+  _mnogo_diff_hook_process($entity, $type, 'insert');
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function mnogo_diff_entity_update($entity, $type) {
+  _mnogo_diff_hook_process($entity, $type, 'update');
+}
+
+/**
+ * Gether entity changes from hook_entity CRUID hooks.
+ */
+function _mnogo_diff_hook_process($entity, $type, $op) {
+  if (mnogo_diff_is_disabled() || !mnogo_diff_entity_support($entity, $type)) {
+    return;
+  }
+
+  // Get entity changes.
+  switch ($op) {
+    case 'delete':
+      $diff = mnogo_diff_get_entity_info($entity, $type);
+      break;
+    case 'insert':
+      $diff = mnogo_diff_clean_entity($entity, $type);
+      break;
+    case 'update':
+      $diff = mnogo_diff_check_entity($entity, $type);
+      break;
+  }
+
+  if (!empty($diff)) {
+    // Delete #custom fields from result diff.
+    if (isset($diff['#custom'])) {
+      unset($diff['#custom']);
+    }
+    $diff['op'] = $op;
+    module_invoke_all('mnogo_diff_log', $diff, $entity, $type);
+  }
+}
+
+
+/**
+ * Callback function for use in hooks_entity_update and hooks_insert.
+ */
+function mnogo_diff_check_entity($entity, $type) {
+  if (empty($entity)) {
+    return;
+  }
+
+  // Check hook_insert and return diff result information.
+  if (!empty($entity->original)) {
+    $entity_original = $entity->original;
+  }
+  else {
+    $entity_info = entity_get_info();
+    $key = $entity_info[$type]['entity keys']['id'];
+    $entity_original = entity_load_unchanged($type, $entity->{$key});
+  }
+
+  // Get entity diff.
+  return mnogo_diff_compare($entity_original, $entity, $type);
+}
+
+/**
+ * Callback function for direct comparing of two entities.
+ */
+function mnogo_diff_compare($entity_original, $entity, $type) {
+  // Check entity type module support.
+  if (empty($entity_original) || !mnogo_diff_entity_support($entity_original, $type)) {
+    return;
+  }
+  // Load common functions.
+  module_load_include('inc', 'mnogo_diff', 'mnogo_diff');
+  return _mnogo_diff_compare_entities($entity_original, $entity, $type);
+}
+
+/**
+ * Callback function get the clean-filterd entity object.
+ */
+function mnogo_diff_clean_entity($entity, $type) {
+  // Check entity type module support.
+  if (empty($entity)) {
+    return;
+  }
+  // Load common functions.
+  module_load_include('inc', 'mnogo_diff', 'mnogo_diff');
+  return _mnogo_diff_clean_entity($entity, $type);
+}
+
+/**
+ * Extended implementation of entity_get_info function.
+ */
+function mnogo_diff_get_entity_info($entity, $type) {
+  $entity_info = entity_get_info();
+  $info = array(
+    'entity_type' => $type
+  );
+
+  // Get entity uuid.
+  if (isset($entity_info[$type]['entity keys']['uuid'])) {
+    $key = $entity_info[$type]['entity keys']['uuid'];
+    $info[$key] = isset($entity->{$key}) ? $entity->{$key} : '';
+  }
+
+  // Identification field name of entity etc nid,cid,..
+  if (isset($entity_info[$type]['entity keys']['id'])) {
+    $key = $entity_info[$type]['entity keys']['id'];
+    // If creating entity, then keys property not exists.
+    $info[$key] = isset($entity->{$key}) ? $entity->{$key} : '';
+  }
+  // Get entity label field
+  if (isset($entity_info[$type]['entity keys']['label'])) {
+    $info['label'] = $entity_info[$type]['entity keys']['label'];
+  }
+  // Get entity bundle.
+  if ($bundle_field = $entity_info[$type]['entity keys']['bundle']) {
+    if (isset($entity->{$bundle_field})) {
+      $info['bundle'] = $entity->{$bundle_field};
+    }
+  }
+  // Check and set default value.
+  $info['bundle'] = isset($info['bundle']) ? $info['bundle'] : $type;
+
+  // Add custom fields to check.
+  $info['#custom']['entity_key'] = $key;
+  _mnogo_diff_get_entity_info_alter($info, $entity, $type);
+
+  return $info;
+}
+
+/**
+ * Add entity property and custom fields to check.
+ */
+function _mnogo_diff_get_entity_info_alter(&$info, $entity, $type) {
+
+  switch ($type) {
+    case 'node':
+      $info['#custom'] = array('sticky', 'promote', 'status');
+      break;
+    case 'commerce_customer_profile':
+      $info['#custom'] = array('status');
+      $info['default_profile'] = (int) ($entity->profile_id == commerce_addressbook_get_default_profile_id($entity->uid, $entity->type));
+      break;
+    case 'contactdetails':
+      $info['#custom'] = array('uid', 'type');
+      break;
+    case 'comment':
+      $info['#custom'] = array('status');
+      $parent_node = entity_metadata_wrapper('node', node_load($entity->nid));
+      $info['nid'] = isset($parent_node->nid) ? $parent_node->nid->value() : 0;
+      $info['parent_node_mnogo_id'] = isset($parent_node->field_mnogo_id) ? $parent_node->field_mnogo_id->value() : '';
+      break;
+    case 'mnogo_email':
+      $info['#custom'] = array('uid', 'main', 'invalid', 'opt_out');
+      break;
+    case 'message':
+      $info['#custom'] = array('uid');
+      break;
+  }
+}
+
+/**
+ * Test cases.
+ */
+function mnogo_diff_mnogo_diff_log($diff, $entity, $entity_type) {
+  // dpm($diff);
+}
+
+/**
+ * Checking is mnogo_diff functional disabled.
+ */
+function mnogo_diff_is_disabled() {
+  return !empty($GLOBALS['mnogo_diff_disable']);
+}
+
+/**
+ * Disable mnogo_diff functional.
+ */
+function mnogo_diff_disable() {
+  $GLOBALS['mnogo_diff_disable'] = TRUE;
+}
+
+/**
+ * Enable mnogo_diff functional.
+ */
+function mnogo_diff_enable() {
+  if (isset($GLOBALS['mnogo_diff_disable'])) {
+    unset($GLOBALS['mnogo_diff_disable']);
+  }
+}
