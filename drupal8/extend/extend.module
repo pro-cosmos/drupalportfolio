@@ -1,0 +1,166 @@
+<?php
+
+/**
+ * @file
+ * Contains extend.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\CssCommand;
+use Drupal\Core\Ajax\HtmlCommand;
+//use Drupal\Core\Ajax\DataCommand;
+use Drupal\Core\Ajax\InvokeCommand;
+
+
+/**
+ * Implements hook_help().
+ */
+function extend_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the extend module.
+    case 'help.page.extend':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Extending base drupal functional module') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+
+function extend_form_node_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  switch ($form_id) {
+    case 'node_task_form':
+    case 'node_task_edit_form':
+      $form_wrapper_id = $form_id . '-wrapper';
+      $form['#prefix'] = '<div id="' . $form_wrapper_id . '">';
+      $form['#suffix'] = '</div>';
+      $form['#validate'][] = 'extend_test_form_validate';
+      $field_test_list = [];
+
+
+      $field_test_name = 'field_telefon';
+      if (isset($form[$field_test_name])) {
+        $field_test_list[] = $field_test_name;
+        $form[$field_test_name]['#prefix'] = '<div id="' . $field_test_name . '-field-wrapper" class="test-button-field-wrapper">';
+        // adjust the form to use ajax submit
+        $label_div = '';
+        if ($form[$field_test_name]['widget'][0]['#title_display'] == 'before') {
+          $label_div = '<div class="label-div">&nbsp;</div>';
+        }
+        $form[$field_test_name . '_button'] = [
+          '#type' => 'button',
+          '#name' => $field_test_name . '_op',
+          '#value' => t("Test it."),
+          '#limit_validation_errors' => TRUE,
+          '#field_test_name' => $field_test_name,
+          '#ajax' => [
+            'callback' => 'extend_field_test_ajax',
+            'wrapper' => $form_wrapper_id,
+            'progress' => [
+              'type' => 'throbber',
+              'message' => t('Verifying...'),
+            ]
+          ],
+          '#attributes' => ['class' => ['test-button']],
+          '#weight' => $form[$field_test_name]['#weight'] + 0.1,
+          '#prefix' => '<div class="form-item">' . $label_div,
+          '#suffix' => '</div></div>',
+        ];
+
+        $form[$field_test_name]['widget'][0]['value']['#attributes']['class'][] = 'test-field';
+        $form_state->set(['storage', 'extend_test_fields'], [$field_test_name]);
+      }
+
+
+      $field_test_name = 'field_email';
+      if (isset($form[$field_test_name])) {
+        $field_test_list[] = $field_test_name;
+        $form[$field_test_name]['#prefix'] = '<div id="' . $field_test_name . '-field-wrapper" class="test-button-field-wrapper">';
+        // adjust the form to use ajax submit
+        $label_div = '';
+        if ($form[$field_test_name]['widget'][0]['#title_display'] == 'before') {
+          $label_div = '<div class="label-div">&nbsp;</div>';
+        }
+        $form[$field_test_name . '_button'] = [
+          '#type' => 'button',
+          '#value' => t("Test it."),
+          '#limit_validation_errors' => TRUE,
+          '#field_test_name' => $field_test_name,
+          '#name' => $field_test_name . '_op',
+          '#ajax' => [
+            'callback' => 'extend_field_test_ajax',
+            'wrapper' => $form_wrapper_id,
+            'progress' => [
+              'type' => 'throbber',
+              'message' => t('Verifying...'),
+            ]
+          ],
+          '#attributes' => ['class' => ['test-button']],
+          '#weight' => $form[$field_test_name]['#weight'] + 0.1,
+          '#prefix' => '<div class="form-item">' . $label_div,
+          '#suffix' => '</div></div>',
+        ];
+
+        $form[$field_test_name]['widget'][0]['value']['#attributes']['class'][] = 'test-field';
+      }
+
+      $form_state->set(['storage', 'extend_test_fields'], $field_test_list);
+      $form['#attached']['library'][] = 'extend/extend.css';
+      $form['#attached']['library'][] = 'extend/extend.masked';
+      $form['#attached']['library'][] = 'extend/extend.js';
+      $form['#attached']['drupalSettings']['extendSettings']['masked_field'] = 'field_telefon';
+      break;
+  }
+}
+
+/**
+ * Validates submission values in the FORM_ID() form.
+ */
+function extend_test_form_validate(array &$form, FormStateInterface $form_state) {
+  $trigger = $form_state->getTriggeringElement();
+  if ($trigger['#type'] != 'button') {
+    $storage = $form_state->getStorage();
+    if (isset($storage['storage']['extend_test_fields'])) {
+      $values = $form_state->getValues();
+
+      foreach ($storage['storage']['extend_test_fields'] as $field_test_name) {
+        $e = $form_state->getFormObject()->getEntity();
+        if ($entity_exists = extend_field_test_search($e->bundle(), $field_test_name, $values[$field_test_name][0]['value'])) {
+          $form_state->setErrorByName($field_test_name, t('Incorrect field value'));
+        }
+      }
+    }
+  }
+}
+
+
+/**
+ * Ajax callback to validate the email field.
+ */
+function extend_field_test_ajax(array &$form, FormStateInterface $form_state) {
+  $trigger = $form_state->getTriggeringElement();
+  $field_test_name = $trigger['#field_test_name'];
+  $e = $form_state->getFormObject()->getEntity();
+  $values = $form_state->getValues();
+  if ($entity_exists = extend_field_test_search($e->bundle(), $field_test_name, $values[$field_test_name][0]['value'])) {
+    $message = sprintf('Value "%s" was created %s', $entity_exists->{$field_test_name}->value, date('d/m/Y', $entity_exists->getCreatedTime()));
+    $form[$field_test_name]['#suffix'] = '<div class="messages messages--error">' . $message . '</div>';
+    $form[$field_test_name]['widget'][0]['value']['#attributes']['class'][] = 'error';
+  }
+
+  return $form;
+}
+
+function extend_field_test_search($bundle, $field_name, $value) {
+  $query = \Drupal::entityQuery('node');
+  $query->condition('type', $bundle);
+  $query->condition($field_name, $value);
+  if ($id = $query->execute()) {
+    $id = reset($id);
+    return \Drupal::entityTypeManager()->getStorage('node')->load($id);
+  }
+}

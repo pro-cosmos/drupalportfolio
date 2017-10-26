@@ -1,0 +1,14 @@
+{
+  "name": "drupal/extend",
+  "type": "drupal-module",
+  "description": "Extending base drupal functional module",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/extend",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/extend",
+    "source": "http://cgit.drupalcode.org/extend"
+  },
+  "require": { }
+}

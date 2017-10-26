@@ -1,0 +1,15 @@
+.test-button-field-wrapper {
+ display: inline-table;
+}
+.test-button-field-wrapper .form-item {
+  display: table-cell;
+}
+.label-div {
+  display: table;
+  margin: 0 0 0.1em;
+  padding: 0;
+}
+
+.test-button-field-wrapper .test-field {
+  width:100%;
+}
