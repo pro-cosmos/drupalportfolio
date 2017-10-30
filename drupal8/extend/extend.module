@@ -10,8 +10,10 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\CssCommand;
 use Drupal\Core\Ajax\HtmlCommand;
-//use Drupal\Core\Ajax\DataCommand;
 use Drupal\Core\Ajax\InvokeCommand;
+
+
+define('EXTEND_FIELD_TEST_ERROR_MESSAGE', 'Field value "%s" already exists in node "%s" created %s by %s');
 
 
 /**
@@ -128,8 +130,8 @@ function extend_test_form_validate(array &$form, FormStateInterface $form_state)
       $values = $form_state->getValues();
 
       foreach ($storage['storage']['extend_test_fields'] as $field_test_name) {
-        $e = $form_state->getFormObject()->getEntity();
-        if ($entity_exists = extend_field_test_search($e->bundle(), $field_test_name, $values[$field_test_name][0]['value'])) {
+        $entity = $form_state->getFormObject()->getEntity();
+        if ($entity_exists = extend_field_test_search($entity, $field_test_name, $values[$field_test_name][0]['value'])) {
           $form_state->setErrorByName($field_test_name, t('Incorrect field value'));
         }
       }
@@ -144,10 +146,15 @@ function extend_test_form_validate(array &$form, FormStateInterface $form_state)
 function extend_field_test_ajax(array &$form, FormStateInterface $form_state) {
   $trigger = $form_state->getTriggeringElement();
   $field_test_name = $trigger['#field_test_name'];
-  $e = $form_state->getFormObject()->getEntity();
+  $entity = $form_state->getFormObject()->getEntity();
   $values = $form_state->getValues();
-  if ($entity_exists = extend_field_test_search($e->bundle(), $field_test_name, $values[$field_test_name][0]['value'])) {
-    $message = sprintf('Value "%s" was created %s', $entity_exists->{$field_test_name}->value, date('d/m/Y', $entity_exists->getCreatedTime()));
+  if ($entity_exists = extend_field_test_search($entity, $field_test_name, $values[$field_test_name][0]['value'])) {
+    $message = sprintf(EXTEND_FIELD_TEST_ERROR_MESSAGE,
+      $entity_exists->{$field_test_name}->value,
+      $entity->getTitle(),
+      date('d/m/Y', $entity_exists->getCreatedTime()),
+      $entity->getRevisionAuthor()->name->value
+    );
     $form[$field_test_name]['#suffix'] = '<div class="messages messages--error">' . $message . '</div>';
     $form[$field_test_name]['widget'][0]['value']['#attributes']['class'][] = 'error';
   }
@@ -155,12 +162,68 @@ function extend_field_test_ajax(array &$form, FormStateInterface $form_state) {
   return $form;
 }
 
-function extend_field_test_search($bundle, $field_name, $value) {
+function extend_field_test_search($entity, $field_name, $value) {
+  $bundle = $entity->bundle();
   $query = \Drupal::entityQuery('node');
   $query->condition('type', $bundle);
   $query->condition($field_name, $value);
+  $query->condition('nid', $entity->id(), '!=');
   if ($id = $query->execute()) {
     $id = reset($id);
     return \Drupal::entityTypeManager()->getStorage('node')->load($id);
   }
+}
+
+
+function extend_comment_insert(Drupal\Core\Entity\EntityInterface $entity) {
+  switch ($entity->bundle()) {
+    case 'task_comment':
+      _extend_rule_update_commented_entity($entity);
+      break;
+  }
+}
+
+function extend_comment_update(Drupal\Core\Entity\EntityInterface $entity) {
+  switch ($entity->bundle()) {
+    case 'task_comment':
+      $nid = $entity->get('entity_id')->target_id;
+      if ($cid = _extend_get_last_comment($nid)) {
+        $cid = reset($cid);
+        if ($cid == $entity->id()) {
+          _extend_rule_update_commented_entity($entity);
+        }
+      }
+      break;
+  }
+}
+
+function extend_comment_delete(Drupal\Core\Entity\EntityInterface $entity) {
+  switch ($entity->bundle()) {
+    case 'task_comment':
+      $nid = $entity->get('entity_id')->target_id;
+      if ($cid = _extend_get_last_comment($nid)) {
+        $cid = reset($cid);
+        $comment = \Drupal::entityTypeManager()->getStorage('comment')->load($cid);
+        _extend_rule_update_commented_entity($comment);
+      }
+      break;
+  }
+}
+
+function _extend_rule_update_commented_entity(Drupal\Core\Entity\EntityInterface $comment) {
+  $nid = $comment->get('entity_id')->target_id;
+  $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+  $cid = $comment->field_comment_status->entity->tid->value;
+  $node->set('field_task_status', $cid);
+  $node->save();
+}
+
+
+function _extend_get_last_comment($nid) {
+  return \Drupal::entityQuery('comment')
+    ->condition('entity_id', $nid)
+    ->condition('entity_type', 'node')
+    ->sort('cid', 'DESC')
+    ->range(0, 1)
+    ->execute();
 }
