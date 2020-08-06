@@ -1,0 +1,27 @@
+backbone:
+  js:
+    js/backbone.js: {}
+conditions:
+  version: VERSION
+  js:
+    js/conditions.js: {}
+  dependencies:
+    - core/jquery.once
+quickedit:
+  version: VERSION
+  js:
+    js/quickedit.js: {}
+  dependencies:
+    - core/drupal.dialog.ajax
+    - core/drupalSettings
+percents:
+  js:
+    js/percents.js: {}
+group_visible:
+  js:
+    js/group_visible.js: {}
+default:
+  version: VERSION
+  css:
+    theme:
+      css/pog_multistep.css: {}

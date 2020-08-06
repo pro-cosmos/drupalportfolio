@@ -1,0 +1,4 @@
+pog_multistep.step_link:
+  class: \Drupal\pog_multistep\Plugin\Menu\MultistepMenuLink
+  deriver: \Drupal\pog_multistep\Plugin\Derivative\MultistepMenuDeriver
+  menu_name: pog-multistep-steps

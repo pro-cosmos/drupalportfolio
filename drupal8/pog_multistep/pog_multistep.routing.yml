@@ -1,0 +1,50 @@
+#pog_multistep.form:
+#  path: '/pog'
+#  defaults:
+#    _title: 'POG'
+#    _controller: '\Drupal\node\Controller\NodeController::add'
+#    _form: '\Drupal\pog_multistep\Form\MultistepNodeForm'
+#    _entity_form: '\Drupal\pog_multistep\Form\MultistepNodeForm'
+#    node_type: 'pog'
+#  requirements:
+#    _node_add_access: 'node:pog'
+#  options:
+#    _node_operation_route: TRUE
+#    parameters:
+#      node_type:
+#        type: 'entity:node_type'
+#        with_config_overrides: TRUE
+
+#pog_multistep.multistep_node_form:
+#  path: '/pog'
+#  defaults:
+#    _form: '\Drupal\pog_multistep\Form\MultistepNodeForm'
+#    _title: 'MultistepNodeForm'
+#  requirements:
+#    _access: 'TRUE'
+
+pog_multistep.multistep_node_controller_add:
+  path: '/pog/{entity_form_mode}'
+  defaults:
+    _title: 'POG'
+    _controller: '\Drupal\pog_multistep\Controller\MultistepNodeController::add'
+    entity_form_mode: base_data
+  options:
+    parameters:
+      entity_form_mode:
+        type: 'entity_form_mode:node'
+        with_config_overrides: TRUE
+  requirements:
+    _role: 'authenticated'
+pog_multistep.multistep_node_controller_redirect:
+  path: '/pog/view'
+  defaults:
+    _controller: '\Drupal\pog_multistep\Controller\MultistepNodeController::redir'
+  requirements:
+    _role: 'authenticated'
+pog_multistep.multistep_node_controller_accept:
+  path: '/pog/accept'
+  defaults:
+    _controller: '\Drupal\pog_multistep\Controller\MultistepNodeController::accept'
+  requirements:
+    _role: 'authenticated'

@@ -1,0 +1,199 @@
+<h3>Geltungsbereich</h3>
+
+<p>Die vorliegende POG Vertriebsleitlinie besitzt Gültigkeit für <strong>[node:field_pog_name]</strong>&nbsp;(im folgenden Versicherungsvermittler genannt),</p>
+
+<p>gemeldet unter der Anschrift <strong>[node:field_pog_strasse]</strong>, <strong>[node:field_pog_house_number]</strong> – <strong>[node:field_pog_postalcode]</strong> <strong>[node:field_pog_city]</strong>, welcher bei der zuständigen IHK</p>
+
+<p>unter der Vermittlerregister-Nr. <strong>[node:field_pog_ihk]</strong>. registriert ist. Der Versicherungsvermittler</p>
+
+<p>vermittelt seit dem <strong>[node:field_pog_dateemployedsince]</strong> Versicherungsprodukte.</p>
+
+<p>&nbsp;</p>
+
+<p>{% if node.field_pog_legalstatus.value == 1 %}</p>
+
+<p>Es handelt sich bei dem Versicherungsvermittler um einen Versicherungsmakler nach § 34d Abs.1 GewO</p>
+
+<p>{% endif %}</p>
+
+<p>{% if node.field_pog_legalstatus.value == 2 %}</p>
+
+<p>Es handelt sich bei dem Versicherungsvermittler um einen Mehrfachvertreter nach § 34d Abs.1 GewO</p>
+
+<p>{% endif %}</p>
+
+<p>{% if node.field_pog_legalstatus.value == 'Sonstiges' %} &nbsp;</p>
+
+<p>{{node.field_pog_legalstatus_other.value}}</p>
+
+<p>{% endif %}</p>
+
+<p>&nbsp;</p>
+
+<p>{% if node.field_pog_other_employees.value %}</p>
+
+<p>Die in dieser Leitlinie nachstehend beschriebenen Vorkehrungen betreffen neben der&nbsp;Geschäftsführung auch die <strong>{{node.field_pog_numemployers.value}}</strong></p>
+
+<p>angestellten Mitarbeiter/innen (im Folgenden Mitarbeiter genannt).&nbsp;Hiervon sind <strong>{{node.field_pog_num_nofullemployers.value}}</strong> Vollzeitbeschäftigte,</p>
+
+<p><strong>{{node.field_pog_num_parttimeemp.value}}</strong> Teilzeitkräfte,&nbsp;sowie <strong>{{node.field_pog_num_minijobemp.value}}</strong> Mitarbeiter auf 450€ Basis.</p>
+
+<p>Des Weiteren sind <strong>{{node.field_pog_num_freelance.value}}</strong>&nbsp;selbstständige Versicherungsvermittler für ihn tätig.</p>
+
+<p>&nbsp;</p>
+
+<p>Die Leitlinie baut dabei auf etablierten Prozessen im Unternehmen auf. Die etablierten Prozesse (z.B. Zuständigkeiten/Verantwortlichkeiten) werden in dieser Leitlinie nicht beschrieben.</p>
+
+<p>Bei sämtlichen Vertriebsvorkehrungen gilt das Prinzip der Verhältnismäßigkeit oder auch Proportionalitätsprinzip. Diesbezüglich leitet sich der Umfang der Vorkehrungen aus der</p>
+
+<p>Komplexität der vertriebenen Produkte ab. Je höher die Komplexität in den Produkten, umso höher müssen entsprechende Produktvertriebsvorkehrungen getroffen werden.</p>
+
+<p>Eine weitere Bemessungsgrundlage bilden der Jahresumsatz, sowie deren Verteilung auf einzelne Produktsparten des Versicherungsvermittlers.</p>
+
+<p>Ausgenommen von dieser Regelung sind Versicherungen für Großrisiken (im Sinne des § 210 Abs.2 VVG iVm Anlage 1 zum VAG). Sämtliche in dieser Leitlinie verwendeten</p>
+
+<p>Begrifflichkeiten werden im Anhang beschrieben und erläutert.</p>
+
+<p>{% endif %}</p>
+
+<p>&nbsp;</p>
+
+<h3>2. &nbsp;Regulatorische Grundlagen<br />
+Ziele der Vertriebsvorkehrungen</h3>
+
+<p>Mit den Vertriebsvorkehrungen sollen Benachteiligungen für den Kunden verhindert werden. Beim Auftreten unvermeidbarer Risiken für den Kunden dienen die Vertriebsvorkehrungen zudem dazu, diese potenziell negativen Auswirkungen zu verringern und zu beheben. Hierzu liegen geeignete Vorkehrungen vor um sicherzustellen, dass sämtliche erforderliche Informationen von den Herstellern eingeholt sowie Hersteller bei festgestellten Fehlentwicklungen informiert werden. Die Auswahl der Zielmärkte, Produkte und Vertriebskanäle erfolgt dabei mit der Sorgfalt eines ordentlichen Kaufmanns.</p>
+
+<p>Daneben sollen die Vorkehrungen ein ordnungsgemäßes Interessenkonfliktma-nagement unterstützen und die Wahrung der Kundenwünsche und -interessen berücksichtigen. Der ehrliche, redliche, professionelle Umgang zum Kunden im Rahmen der Versicherungsvertriebstätigkeit sowie das Handeln in dessen bestmöglichen Interesse werden somit durch diese Vorkehrungen unterstützt. Das Kundeninteresse steht im Mittelpunkt bei Beratung und Vermittlung; Wünsche des Kunden haben Vorrang vor Provisionsinteresse.</p>
+
+<p>&nbsp;</p>
+
+<h3>Vertriebsstrategie</h3>
+
+<p>Die zu Grunde liegende Vertriebsstrategie leitet sich unmittelbar aus der gesamthaften Strategie des Versicherungsvermittlers ab. Diese obliegt der Verantwortung und dem Ermessen der Geschäftsführung.</p>
+
+<p>{% if node.field_pog_country.0.value == 'Deutschland' %}</p>
+
+<p>Der Versicherungsmakler ist im deutschen Versicherungsmarkt vertrieblich tätig.</p>
+
+<p>{% endif %}</p>
+
+<p>{% if node.field_pog_country.1.value == 'Sonstiges' %}</p>
+
+<p>Des Weiteren ist er in</p>
+
+<p>{% for item in node.field_pog_countries_eu.value %} [node:field_pog_countries_eu:{{loop.index0}}:entity], {% endfor %}</p>
+
+<p>beratend und vertreibend tätig.</p>
+
+<p>{% endif %}</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<h4>Rolle eines Produktgebers</h4>
+
+<p>Übt die Gesellschaft eigenständig und in wesentlichem Umfang Entscheidungsbefugnisse über die folgenden Merkmale von (einzelnen) Versicherungsprodukten aus: Deckung, Preis, Kosten, Risiko, Zielmarkt, Entschädigung, Garantierechte?</p>
+
+<p>{% if node.field_pog_decision_making.value %}</p>
+
+<p>{% if node.field_pog_decision_making_how.value == 1 %}</p>
+
+<p>Der Versicherungsvermittler ist maßgeblich an Entscheidungen zur Produktkonzeption und –entwicklung von Produktgebern beteiligt. Er fungiert nicht nur als als reiner Vertreiber der durch die Versicherungsunternehmen hergestellten Versicherungsprodukte, sondern hat entsprechende Entscheidungsbefugnisse. Dieser Prozess findet in enger Zusammenarbeit mit dem Versicherer statt. Welche?</p>
+
+<p>{% endif %}</p>
+
+<p>{% if node.field_pog_decision_making_how.value == 2 %}</p>
+
+<p>Versicherungsvermittler ist grundsätzlich nicht maßgeblich an Entscheidungen zur Produktkonzeption und –entwicklung von Produktgebern beteiligt. Sie fügt zwar eigenständig und in wesentlichem Umfang Entscheidungsbefugnisse über die Deckung, Preis, Kosten, Risiko, Zielmarkt, Entschädigung, Garantierechte von Versicherungsprodukten aus, jedoch beschränkt sich der Einfluss auf die Individualisierung von Versicherungsprodukten bezüglich einzelner Versicherungsverträge oder Konzeption individueller Verträge für einzelne Kunden. Die Konzeption und Entscheidungen zur Realisierung von neuen Produkten befinden sich dabei nicht im Verantwortungs- und Zuständigkeitsbereich Versicherungsvermittlers.</p>
+
+<p>{% endif %}</p>
+
+<p>{% else %}</p>
+
+<p>Der Versicherungsvermittler ist grundsätzlich nicht maßgeblich an Entscheidungen zur Produktkonzeption und –entwicklung von Produktgebern beteiligt. Er fungiert somit primär als reiner Vertreiber der durch die Versicherungsunternehmen hergestellten Versicherungsprodukte.</p>
+
+<p>{% endif %}</p>
+
+<p>&nbsp;</p>
+
+<h2>TAB 2</h2>
+
+<p>&nbsp;</p>
+
+{% set tab2produktgruppen = [] %}
+{% if node.field_pog_bav.value %} {% set tab2produktgruppen = tab2produktgruppen|merge(['Altersvorsorge']) %} {% endif %}
+{% if node.field_pog_life.value %} {% set tab2produktgruppen = tab2produktgruppen|merge(['Lebensversicherungen']) %} {% endif %}
+{% if node.field_pog_health.value %} {% set tab2produktgruppen = tab2produktgruppen|merge(['Krankenversicherungen']) %} {% endif %}
+{% if node.field_pog_objects.value %} {% set tab2produktgruppen = tab2produktgruppen|merge(['Sachversicherungen']) %} {% endif %}
+{% if node.field_pog_other_products.value %} {% set tab2produktgruppen = tab2produktgruppen|merge(['sonstige Produkte']) %} {% endif %}
+
+<p>Der Versicherungsmakler berät und vertreibt in den genannten Zielmärkten betriebliche <strong>{{ tab2produktgruppen | safe_join(', ') }}</strong></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<p>{% if node.field_pog_bav.value %}</p>
+<p>Im Rahmen der betrieblichen Altersvorsorge bietet der Versicherungsmakler </p>
+<strong>{% for item in node.field_pog_bav.value %} [node:field_pog_bav:{{loop.index0}}:entity] {% if not loop.last %},{% endif %} {% endfor %}</strong> an.
+{% endif %}
+
+<p>{% if node.field_pog_life.value %}</p>
+<p>Im Bereich der Lebensversicherung werden</p>
+<strong>{{ context.field_pog_life | safe_join(', ') }}</strong> angeboten.
+{% endif %}
+
+<p>&nbsp;</p>
+
+<p>{% if node.field_pog_health.value %}</p>
+<p>Im Bereich der Krankenzusatzversicherungen werden</p>
+<strong>{{ context.field_pog_health | safe_join(', ') }}</strong> angeboten.
+{% endif %}
+
+<p>&nbsp;</p>
+
+<p>{% if node.field_pog_objects.value %}</p>
+<p>Aus dem  Bereich Sachversicherungen werden</p>
+<strong>{{ context.field_pog_objects | safe_join(', ') }}</strong>.
+{% endif %}
+
+<p>&nbsp;</p>
+<p>{% if node.field_pog_other_products.value %}</p>
+<p>Darüber hinaus werden noch <strong> [node:field_pog_other_products_ja:entity] </strong>  angeboten.</p>
+{% endif %}
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+<p>{% if node.field_pog_vermitteln1.value %}</p>
+<p>Es werden den Kunden hierbei grundsätzlich Produkte aller Anbieter, welche für den Vermittler auf dem Versicherungsmarkt(/Märkten) verfügbar sind,
+angeboten.</p>
+{% endif %}
+
+<p>&nbsp;</p>
+<p>{% if node.field_pog_vermitteln2.value %}</p>
+<p>Es werden den Kunden hierbei grundsätzlich Produkte aller Anbieter, mit Ausnahme von <strong>{{ node.field_pog_vermitteln2ja.value }}</strong>, welche für den Vermittler auf
+dem Versicherungsmarkt(/Märkten) verfügbar sind, angeboten.</p>
+{% endif %}
+
+
+<p>&nbsp;</p>
+<p>{% if node.field_pog_vermittelen_brokers.value %}</p>
+<p>Es werden den Kunden Produkte, der folgenden Anbieter angeboten: <strong>[node:field_pog_vermittelen_brokersja:entity]</strong></p>
+{% endif %}
+
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>

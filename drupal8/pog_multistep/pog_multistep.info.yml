@@ -1,0 +1,9 @@
+name: POG Multistep
+description: Creates a multistep form.
+package: Custom
+
+type: module
+core: 8.x
+
+dependencies:
+  - node

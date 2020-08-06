@@ -1,0 +1,72 @@
+.field--name-field-pog-legalstatus-other label,
+.field--name-field-pog-other-products-ja  label,
+.field--name-field-pog-vermitteln2ja label,
+.field--name-field-pog-vermittelen-brokersja label,
+.field--name-field-pog-tariff-other label,
+.field--name-field-pog-cooper-with-other label,
+.field--name-field-pog-targetins-ja label,
+.field--name-field-pog-zielmarkt5j label,
+.field--name-field-pog-inf-from-manuf-ja label,
+.field--name-field-pog-select-leben5ja label,
+.field--name-field-pog-adressed-group-ja label,
+.field--name-field-pog-select-kraken5ja label,
+.field--name-field-pog-select-sach5ja label,
+.field--name-field-pog-demand-otherja label,
+.field--name-field-pog-investment-account-oth label,
+.field--name-field-pog-other-test label,
+.field--name-field-pog-encoder-leben label,
+.field--name-field-pog-encoder-sach label,
+.field--name-field-pog-encoder-kraken label,
+.field--name-field-pog-treffe-alle label,
+.field--name-field-pog-emloyee-6ja label,
+.field--name-field-pog-monitoring3-8-other label,
+.field--name-field-pog-coflicts-3-8 label,
+.field--name-field-pog-table38-otherja label,
+.field--name-field-pog-monitoring-otherja label,
+.field--name-field-pog-kooper332-6ja label,
+.field--name-field-pog-mistake3-8- label,
+.field--name-field-pog-allgemein3-1 label,
+.field--name-field-pog-beratung-3a label,
+.field--name-field-pog-other3-4-5ja label,
+.field--name-field-pog-learning-ja-other label,
+.field--name-field-pog-activities-other label,
+.field--name-field-pog-distribution-other label,
+.field--name-field-pog-doc-lastja label,
+.field--name-field-pog-person-name label,
+.field--name-field-pog-training-other label,
+.field--name-field-pog-firma legend,
+.field--name-field-pog-branche legend,
+.field--name-field-pog-employees-getbasic legend,
+.field--name-field-pog-vermitteln-list legend,
+.field--name-field-pog-website-needs-sonstige label,
+.field--name-field-pog-learning-whatdoc-sonst label
+{
+visibility: hidden;
+}
+
+.field--name-field-pog-inf-from-manuf6 legend,
+.field--name-field-pog-beratung-1 legend,
+.field--name-field-pog-kooper332-4a legend,
+.field--name-field-pog-meeting-ja legend,
+.field--name-field-pog-select-kraken4-term .field-label,
+.field--name-field-pog-select-sach4-term .field-label,
+.field--name-field-pog-3-8int label
+{
+  display:none;
+}
+
+/* todo: Move to less file */
+.page-pog form.node-form fieldset.error legend,
+.page-pog form.node-form fieldset.error label
+{
+  color: #b30739;
+}
+
+.field--name-field-pog-emloyee-4ja label {
+  display: block !important;
+}
+
+/* Second level checkbox */
+.field--name-field-pog-website-needs .form-item-field-pog-website-needs-31 {
+  padding-left: 30px;
+}

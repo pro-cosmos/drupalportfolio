@@ -1,0 +1,9 @@
+id: pog-multistep-steps
+label: 'POG Multistep: Steps'
+description: 'Links for POG multistep form.'
+langcode: de
+locked: true
+dependencies:
+  enforced:
+    module:
+      - pog_multistep
