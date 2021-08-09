@@ -1,0 +1,4 @@
+api_url: "https://jsonplaceholder.typicode.com"
+api_path_posts_all: "posts"
+api_path_posts_single: "posts/[post_id]"
+posts_number: 50

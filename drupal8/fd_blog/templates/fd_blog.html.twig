@@ -1,0 +1,8 @@
+<!-- Add you custom twig html here -->
+<ul>
+{% for item in items %}
+<li>
+    {{ item.id }}) <a href="/fd/blog/{{item.id}}">{{ item.title }}</a>
+</li>
+{% endfor %}
+</ul>

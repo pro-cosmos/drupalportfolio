@@ -1,0 +1,4 @@
+services:
+  fd_blog.api:
+    class: Drupal\fd_blog\FdBlogApiService
+    arguments: ['@config.factory', '@http_client']
