@@ -1,0 +1,18 @@
+fd_blog.fd_config_form:
+  path: '/admin/config/fd_blog/config'
+  defaults:
+    _form: '\Drupal\fd_blog\Form\FdConfigForm'
+    _title: 'Fd blog config'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
+
+fd_blog.fd_blog_controller_hello:
+  path: '/fd/blog/{id}'
+  defaults:
+    _controller: '\Drupal\fd_blog\Controller\FdBlogController::show'
+    _title: 'Posts'
+    id: 'all'
+  requirements:
+    _permission: 'access content'

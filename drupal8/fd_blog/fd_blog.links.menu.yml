@@ -1,0 +1,6 @@
+fd_blog.fd_config_form:
+  title: 'FD blog config'
+  route_name: fd_blog.fd_config_form
+  description: 'FD blog configuration form'
+  parent: system.admin_config_system
+  weight: 99

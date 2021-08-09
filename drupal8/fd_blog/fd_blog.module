@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Contains fd_blog.module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function fd_blog_theme() {
+  return [
+    'fd_blog' => [
+      'variables' => [
+        'items' => '',
+      ],
+      'template' => 'fd_blog',
+    ],
+    'fd_blog_post' => [
+      'variables' => [
+        'item' => '',
+      ],
+      'template' => 'fd_blog_post',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_theme().
+ */
+function crave_global_theme($existing, $type, $theme, $path) {
+  return [
+    'crave_global_contact_us' => [
+      'variables' => [
+        'phone' => '',
+        'title' => '',
+        'formstack_js' => '',
+      ],
+      'template' => 'contact-us',
+    ],
+    'crave_product_listing_filter_form' => [
+      'variables' => [
+        'filters' => [],
+      ],
+      'template' => 'product-filter',
+    ],
+    'crave_global_cookie_settings_block' => [
+      'variables' => [
+        'label' => '',
+      ],
+      'template' => 'cookie-settings-block',
+    ],
+  ];
+}
