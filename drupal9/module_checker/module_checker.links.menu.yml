@@ -1,0 +1,14 @@
+
+# Module info menu items definition
+entity.module_info.collection:
+  title: 'Module info list'
+  route_name: entity.module_info.collection
+  description: 'List Module info entities'
+  parent: system.admin_structure
+  weight: 100
+
+module_info.admin.structure.settings:
+  title: 'Module info settings'
+  description: 'Configure Module info entities'
+  route_name: module_info.settings
+  parent: system.admin_structure

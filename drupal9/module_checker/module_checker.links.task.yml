@@ -1,0 +1,21 @@
+# Module info routing definition
+module_info.settings_tab:
+  route_name: module_info.settings
+  title: 'Settings'
+  base_route: module_info.settings
+
+entity.module_info.canonical:
+  route_name: entity.module_info.canonical
+  base_route: entity.module_info.canonical
+  title: 'View'
+
+entity.module_info.edit_form:
+  route_name: entity.module_info.edit_form
+  base_route: entity.module_info.canonical
+  title: 'Edit'
+
+entity.module_info.delete_form:
+  route_name:  entity.module_info.delete_form
+  base_route:  entity.module_info.canonical
+  title: Delete
+  weight: 10

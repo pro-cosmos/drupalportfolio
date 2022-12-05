@@ -1,0 +1,31 @@
+{#
+/**
+* @file
+* Default theme implementation to display a block.
+*
+* @see template_preprocess_block()
+*
+* @ingroup themeable
+*/
+#}
+{% set classes = [
+    'clear-both',
+] %}
+<div{{ attributes.addClass(classes) }}>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Sites</th>
+      <th>Issues</th>
+      <th>Bugs</th>
+    </tr>
+    {% for row in content %}
+        <tr>
+          <td>{{ row.name }}</td>
+          <td>{{ row.sites }}</td>
+          <td>{{ row.issues }}</td>
+          <td>{{ row.bugs }}</td>
+        </tr>
+    {% endfor %}
+  </table>
+</div>

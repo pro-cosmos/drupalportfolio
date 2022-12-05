@@ -1,0 +1,20 @@
+add module info entities:
+  title: 'Create new Module info entities'
+
+administer module info entities:
+  title: 'Administer Module info entities'
+  description: 'Allow to access the administration form to configure Module info entities.'
+  restrict access: true
+
+delete module info entities:
+  title: 'Delete Module info entities'
+
+edit module info entities:
+  title: 'Edit Module info entities'
+
+view published module info entities:
+  title: 'View published Module info entities'
+
+view unpublished module info entities:
+  title: 'View unpublished Module info entities'
+

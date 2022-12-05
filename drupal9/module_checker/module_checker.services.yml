@@ -1,0 +1,7 @@
+services:
+  logger.channel.module_checker:
+    parent: logger.channel_base
+    arguments: ['module_checker']
+  module_checker.service:
+    class: Drupal\module_checker\ModuleChecker
+    arguments: ['@entity_type.manager', '@http_client']

@@ -1,0 +1,5 @@
+entity.module_info.add_form:
+  route_name: entity.module_info.add_form
+  title: 'Add Module info'
+  appears_on:
+    - entity.module_info.collection

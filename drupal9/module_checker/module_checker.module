@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * Contains module_checker.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function module_checker_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the module_checker module.
+    case 'help.page.module_checker':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('My Awesome Module') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_cron().
+ *
+ */
+function module_checker_cron() {
+  \Drupal::service('module_checker.service')->cron();
+}
+
+/**
+ * Implements hook_theme().
+ */
+function module_checker_theme() {
+  return [
+    'modules_info' => [
+      'variables' => [
+        'content' => NULL
+      ],
+      'render element' => 'children',
+    ],
+  ];
+}
