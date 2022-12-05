@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Contains site_endpoints.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function site_endpoints_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the site_endpoints module.
+    case 'help.page.site_endpoints':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Custom site endpoints') . '</p>';
+      return $output;
+
+    default:
+  }
+}

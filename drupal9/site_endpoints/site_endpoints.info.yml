@@ -1,0 +1,7 @@
+name: 'Site endpoints'
+type: module
+description: 'Custom site endpoints'
+core_version_requirement: ^9 || ^10
+package: 'Custom'
+dependencies:
+  - drupal:rest
