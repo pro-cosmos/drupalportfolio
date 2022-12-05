@@ -1,0 +1,9 @@
+bgm_mini_client_test.remote_login_test:
+  path: '/remote_login_test/{token}'
+  defaults:
+    _controller: '\Drupal\bgm_mini_client_test\Controller\TestController::remote_login_test'
+    token: false
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'

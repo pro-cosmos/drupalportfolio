@@ -1,0 +1,6 @@
+name: 'bgm_mini_client_test'
+type: module
+description: 'BGM Mini client test module'
+core: 8.x
+core_version_requirement: ^8 || ^9
+package: 'Testing'

@@ -1,0 +1,10 @@
+bgm_mini_client.settings:
+  type: config_object
+  label: 'Settings'
+  mapping:
+    local_login_uri:
+      type: string
+      label: 'Local url for BGM Mini login redirection page'
+    remote_login_uri:
+      type: uri
+      label: 'Remote url for login on BGM Mini'

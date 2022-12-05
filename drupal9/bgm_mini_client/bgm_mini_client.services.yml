@@ -1,0 +1,6 @@
+services:
+  bgm_mini_client.client_service:
+    class: Drupal\bgm_mini_client\BgmMiniClientService
+    arguments: [ '@http_client', '@config.factory', '@bgm_mini_client.firebase.php-jwt' ]
+  bgm_mini_client.firebase.php-jwt:
+    class: Firebase\JWT\JWT

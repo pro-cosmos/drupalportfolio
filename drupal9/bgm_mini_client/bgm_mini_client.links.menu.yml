@@ -1,0 +1,5 @@
+bgm_mini_client.bgm_mini_client_settings_form:
+  title: 'BGM Mini client settings'
+  route_name: bgm_mini_client.bgm_mini_client_settings_form
+  parent: system.admin_config_system
+  weight: 99

@@ -1,0 +1,2 @@
+local_login_uri: "/test/redirect"
+remote_login_uri: "http://site.com/jwt-login"
