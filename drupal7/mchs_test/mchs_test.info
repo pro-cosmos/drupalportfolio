@@ -1,0 +1,4 @@
+name = MCHS test module
+description = MCHS test module.
+package = Custom
+core = 7.x

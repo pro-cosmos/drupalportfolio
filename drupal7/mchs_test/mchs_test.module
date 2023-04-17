@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * The MCHS test task.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function mchs_test_menu() {
+  $items = array();
+  $items['mchs_test_form'] = array(
+    'title' => 'Product total calculation test',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('product_total_calc_form'),
+    'access callback' => TRUE,
+    'description' => 'Product total calculation test',
+    'file' => 'mchs_test_form.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
